@@ -1,0 +1,24 @@
+CREATE_FUNCTION(plcy_xxx)
+  return varchar2
+--authid current_user
+--authid definer
+is
+/*****************************************************************
+* Procedure Info
+* Author          : $Author:  $
+* Original Date   : $Date:  $
+* Last Modified   : $Modtime: $
+* Archive Name    : $Archive: $
+* Description     :  $
+* Revision History: $Revision: 1.1 $
+* Workfile        : $Workfile: $
+* Copyright       : Equinor ASA
+*****************************************************************
+* Description
+* https://docs.oracle.com/database/121/ARPLS/d_rls.htm#ARPLS052
+* Policy. Intended usage:
+*
+*****************************************************************/
+begin
+   return{predicate};
+END_CREATE_FUNCTION;

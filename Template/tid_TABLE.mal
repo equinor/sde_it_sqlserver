@@ -1,0 +1,53 @@
+/*
+drop sequence seq_{table_name};
+
+create sequence seq_{table_name}
+START WITH 0
+INCREMENT BY 1
+MINVALUE 0
+MAXVALUE 3000000000
+NOCACHE 
+CYCLE 
+ORDER;
+*/
+---- drop trigger t_id{table_name};
+
+CREATE_TRIGGER(t_id{table_name})
+  before insert or update
+  on {table_name}
+  for each row
+declare
+/*****************************************************************
+*  Package Info
+*   Author          : $Author:  $
+*   Original Date   : $Date:  $
+*   Last Modified   : $Modtime: $
+*   Archive Name    : $Archive: $
+*   Description     : $Header:  $
+*   Revision History: $Revision: $
+*   Tag name        : $Name:  $
+*   Workfile        : $Workfile: $
+*   Copyright       : $Equinor ASA: $
+*****************************************************************
+* Description
+* Maintains the id column in the table.
+* Using coalesce incase attempting to nullify column.
+*****************************************************************
+* Log
+* Date   Description									   	Done by
+* 210119 Added sys_guid										JOTHOR
+*****************************************************************/
+  STANDARD_VARIABLE;
+begin
+   if (inserting) then
+      :new.st_id := seq_epds_global.nextval;
+	   :new.guid := sys_guid();
+   elsif (updating and (coalesce(:new.st_id,-1)  != :old.st_id
+			    or :new.guid is null or :new.guid != :old.guid
+			    )
+		   ) then
+      USERERROR(18,'st_id/guid','{table_name}');
+   end if;
+EXCEPTION_BLOCK
+   THROW_EXCEPTION_HANDLER;
+END_TRIGGER;

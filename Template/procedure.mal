@@ -1,0 +1,34 @@
+CREATE_PROCEDURE(xxx)
+--with execute ???
+--with execute as owner
+as
+/*****************************************************************
+*  Procedure Info
+*   Author        : $Author: JOTHOR $
+*   Original Date   : $Date: 2020/08/24 $
+*   Last Modified   : $Modtime: $
+*   Archive Name    : $Archive: $
+*   Description     : $Header: JOTHOR Exp $
+*   Revision History: $Revision: 1.4 $
+*   Tag name        : $Name:  $
+*   Workfile        : $Workfile: $
+*****************************************************************
+* Description
+*
+*
+*****************************************************************
+* Log
+* Date   Description					                           Done by
+*
+*****************************************************************/
+  STANDARD_VARIABLE;
+begin
+   -- Recommended
+   set nocount on;
+  
+   BEGIN_EXCEPTION
+   COMMIT_TRANSACTION;
+  
+   EXCEPTION_BLOCK
+      STD_EXCEPTION_HANDLER;
+END_CREATE_PROCEDURE;

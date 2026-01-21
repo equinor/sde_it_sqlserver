@@ -1,0 +1,126 @@
+CREATE_PROCEDURE(cleanUpLogTable)
+/*****************************************************************
+* Package Info
+* Author          : $Author: JOTHOR $
+* Original Date   : $Date: 2016/08/16 13:20:13 $
+* Last Modified   : $Modtime: $
+* Archive Name    : $Archive: $
+* Description     : $Header:  JOTHOR Exp $
+* Revision History: $Revision: 2.3 $
+* Workfile        : $Workfile: $
+* Copyright info  : Copyright (c), Statoil ASA,Norway. $Date: 2016/08/16 13:20:13 $
+*****************************************************************
+* Description
+* Relates to registered tables in cleanUpTableInfo. 
+* 
+*****************************************************************
+* Log
+* Date  Description                                      Done by
+* 250919 Up'ed process_information_history to 366 days    JOTHOR
+* 100622 Relates to registered tables in cleanUpTableInfo.JOTHOR
+*****************************************************************/
+is
+   STANDARD_VARIABLE;
+
+/*****************************************************
+* lDay   the number of days to start deletion from
+* lDate	 calculated date from which everything older
+* 	 shall be delete
+* lStartDate the time this proc started
+* lEndDate the time this proc ended
+* lCount  counter.
+* lErrText error text
+* lMessage message text
+* lErrCount the number of errors encountered
+*****************************************************/  
+  cursor cur_data is
+   select *
+      from cleanUpTableInfo
+      order by appname,tabname;
+      
+  lSql varchar2(1000);
+  lDay integer := 0;
+  lDate date := null;
+  lStartDate date;
+  lEndDate date;
+  lCount integer := 0;
+  lTabCount integer := 0;
+  lErrText batch_status.message%type;
+  lMessage batch_status.message%type;
+  lErrCount integer := 0;
+begin
+  /********************************************
+  * Cleanup Block 1:
+  * Calculate the date to delete from
+  * List of all the actions/tables to be cleaned.
+  * To be kept in own block
+  * Register the occasion in the batch status
+  * table.
+  * The getstatus refers to the cleanup block. The
+  * consume_exception_handler set the status flag,
+  * should an error have occurred.
+  ********************************************/
+  for i in cur_data
+  loop
+    SETSTATUS(0);
+    if (i.isactive = 0) then
+      LOG(LEVEL_INFO,'Cleanup of table "'||i.tabname||'" is set to inactive.');
+      continue;
+    end if;
+    
+    select count(*) into lTabCount from user_tables where table_name = upper(i.tabname);
+    if (lTabCount = 0) then
+      lErrCount := lErrCount + 1;
+      lSql := 'update cleanUpTableInfo'
+             ||' set isactive=0'
+             ||'    ,message=''Table >'||i.tabname||'< does not exist. Setting to inactive.'''
+             ||' where tabname = '''||i.tabname||'''';
+      begin
+        execute immediate lSql;
+        commit;
+      EXCEPTION_BLOCK
+         CONSUME_EXCEPTION_HANDLER;
+      end;
+      LOG(LEVEL_INFO,'Table '||i.tabname||' does not exist.');
+      continue;
+    end if;
+    
+    lDay := i.days;
+    select sysdate - lDay into lDate from dual;
+    select sysdate into lStartDate from dual;
+    lCount := 0;
+    begin
+      lSql := 'delete from '||i.tabname
+             ||' where '||i.synccolumn||' < (sysdate - '||i.days||')';
+      execute immediate lSql;
+      lCount := lCount + sql%rowcount;
+      DEBUG('Deleted '||lCount||' rows exceeding nr days = '||i.days||'. Sql='||lSql);
+      COMMIT;
+    EXCEPTION_BLOCK
+      CONSUME_EXCEPTION_HANDLER;
+    end;
+
+    select sysdate into lEndDate from dual;
+
+    if (GETSTATUS = 0) then
+      lErrCount := 0;
+      lMessage := 'Removed rows older than '|| to_char(lDate,'DD.MM.YYYY') || ' in log table= ' || i.tabname;
+    else
+      lErrCount := 1;
+      lMessage := ERRORTEXT;
+    end if;
+
+   SF_UpdateBatchStatus('cleanUpTableInfo.'||i.tabname
+	  ,lStartDate
+     ,lEndDate
+	  ,lErrCount
+	  ,lCount
+	  ,lMessage
+	  );
+   DEBUG('SF_UpdateBatchStatus registered');
+  end loop;
+
+  EXCEPTION_BLOCK
+    STD_EXCEPTION_HANDLER;
+END_PROCEDURE;
+

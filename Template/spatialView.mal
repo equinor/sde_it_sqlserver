@@ -1,0 +1,118 @@
+@echo off
+setlocal
+rem ************************************************************
+rem  Author          : $Author:  $
+rem  Original Date   : $Date: $
+rem  Last Modified   : $Modtime: $
+rem  Archive Name    : $Archive: $
+rem  Description     : $Header: $
+rem  Revision History: $Revision: $
+rem  Workfile        : $Workfile: $
+rem  Copyright info  : Copyright (c), StatoilHydro ASA,Norway. $Date: $
+rem 
+rem ***********************************************************
+rem  Description:
+rem  See http://edndoc.esri.com/arcsde/9.1/ for details.
+rem  xUser    - the schema owner the view is being deployed in
+rem  xTheWord - the schema owner p a s w d the view is being deployed in
+rem  xOptionalInstance - instance (can be picked up from the environment)
+rem  xOptionalSDEHOME  - sde home path (can be picked up from the environment)
+rem ******************************************************************************
+rem Log
+rem Date   Description                                     Done by
+rem 010310 See C148591                                     JOTHOR
+rem ************************************************************/
+
+set xUser=%1
+set xTheWord=%2
+set xOptionalInstance=%3
+set xOptionalSDEHOME=%4
+set xOptionalServer=%5
+
+if "%xUser%" == ""  goto le_Parameter
+if "%xTheWord%" == ""  goto le_Parameter
+if "%xInstance%" == "" (
+rem echo checking instance
+  if "%xOptionalInstance%" == "" goto le_Parameter
+  set xInstance=%xOptionalInstance%
+)
+if "%SDEHOME%" == "" (
+rem echo eching sdehome
+  if "%xOptionalSDEHOME%" == "" goto le_Parameter
+  set SDEHOME=%xOptionalSDEHOME%
+)
+if "%xServer%" == "" (
+rem echo eching server
+  if "%xOptionalServer%" == "" goto le_Parameter
+  set xServer=%xOptionalServer%
+)
+
+set PATH=%SDEHOME%;%PATH%
+set xConnectInfo=-i %xInstance% -u %xUser% -p %xTheWord% 
+rem -s %xServer%
+
+rem ************************************************************
+rem sdetable -o delete -t <table>
+rem   [-i <service>] [-s <server_name>] [-D <database>]
+rem   -u <DB_User_name> [-p <DB_User_password>] [-N] [-q]
+rem 
+rem sdetable -o create_view -T <view_name> -t <table1,table2...tablen>
+rem     -c <table_col1,table_col2...table_coln>
+rem     [-a <view_col1,view_col2...view_coln>] [-w <"where_clause">]
+rem     [-i <service>] [-s <server_name>] [-D <database>]
+rem      -u <DB_User_name> [-p <DB_User_password>] [-N] [-q]
+rem ************************************************************
+
+rem **********************************************
+rem Create table
+rem Delete it first
+rem Grant necessary access
+rem Create the table
+rem **********************************************
+set xTable=<XXX table_name>
+
+sdetable -o delete -t %xTable% %xConnectInfo% -N
+rem if errorlevel 1 goto le_end
+
+echo Creating view %xTable%
+
+sdetable -o grant -t <table in focus> -U %xUser% -A select -I -u <owner> -p <password>-i %xInstance% -s %xServer%
+if errorlevel 1 goto le_errGrant
+
+rem **********************************************
+rem Create the view. Note spaces! Extremely important
+rem to have spaces exactly as in template.
+rem **********************************************
+sdetable -o create_view -T %xTable% ^
+ -t <table_1>,<table_2>^
+ -c <col1>^
+,<col2>^
+,<col3>^
+ -a <attribute1>^
+,<attribute2>^
+,<attribute3>^
+ -w "<where condition eg wellId=wellId"^
+ %xConnectInfo%
+
+rem **********************************************
+rem End of program - no code below this line.
+rem Reserved area for error handling.
+rem **********************************************
+goto le_end
+
+:le_errGrant
+echo Error occurred during grant
+goto le_end
+
+:le_Parameter
+echo Please supply the following parameters:
+echo Schema user the view is being deploy in
+echo Schema users password the view is being deploy in
+echo sde instance the view is being deploy in
+echo sde home the view is being deploy in
+echo server the instance is running on
+goto le_end
+
+:le_end
+endlocal
+exit /b errorlevel

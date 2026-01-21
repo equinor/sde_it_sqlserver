@@ -1,0 +1,21 @@
+#****************************************************
+# Privileges required
+# ability to grant execute to public
+# TransactionHandling requires access to
+#    v$transaction t
+#    v$session s
+#
+#****************************************************
+initEnvironment_table_trigger_data.prc
+errorhandler.pck
+errorhandler.pcb
+it_constant.pck
+utility.pck
+utility.pcb
+transactionhandling.pck
+transactionhandling.pcb
+SF_UpdateBatchStatus.pcb
+cleanUpLogTable.pcb
+grant.sql
+
+

@@ -1,0 +1,23 @@
+DROP VIEW VA_TABLE_LOCK_HISTORY;
+
+/* Formatted on 28.05.2015 06:41:25 (QP5 v5.256.13226.35510) */
+CREATE OR REPLACE FORCE VIEW VA_TABLE_LOCK_HISTORY
+(
+   START_TIME,
+   REGISTRATION_ID,
+   TABLE_OWNER,
+   TABLE_NAME,
+   NODENAME,
+   DIRECT_CONNECT,
+   PROCESS_OWNER
+)
+AS
+     SELECT "START_TIME",
+            "REGISTRATION_ID",
+            "TABLE_OWNER",
+            "TABLE_NAME",
+            "NODENAME",
+            "DIRECT_CONNECT",
+            "PROCESS_OWNER"
+       FROM table_lock_history
+   ORDER BY start_time DESC;

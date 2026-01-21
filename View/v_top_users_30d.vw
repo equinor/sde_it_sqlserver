@@ -1,0 +1,19 @@
+DROP VIEW V_TOP_USERS_30D;
+
+/* Formatted on 28.05.2015 06:41:22 (QP5 v5.256.13226.35510) */
+CREATE OR REPLACE FORCE VIEW V_TOP_USERS_30D
+(
+   NAME,
+   CONNECTION_DAYS
+)
+AS
+     SELECT name, COUNT (*)
+       FROM (SELECT DISTINCT connect_date, name
+               FROM SDE_IT.V_PI_HISTORY_USERS_LTPC_30D)
+   GROUP BY name
+   UNION
+     SELECT '(Terminal Server)' name, COUNT (*)
+       FROM SDE_IT.V_PI_HISTORY_USERS_30D
+      WHERE UPPER (nodename) LIKE '%TS%'
+   GROUP BY 1
+   ORDER BY 2 DESC;

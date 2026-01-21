@@ -1,0 +1,26 @@
+
+# Set up the tables
+initEnvironment_table_trigger_data.prc
+
+#Load the procedures
+ErrorHandler.pck
+ErrorHandler.pcb
+IT_Constant.pck
+Common.pck
+Common.pcb
+grantToRBAC.prc
+Mangage_MAIL.pck
+Mangage_MAIL.pcb
+SF_UpdateBatchStatus.pcb
+cleanUpLogTable.pcb
+recompile_invalid_objects.pcb
+transactionHandling.pck
+transactionHandling.pcb
+treeManipulation.pck
+treeManipulation.pcb
+utility.pck
+Utility.pcb
+
+# Grants
+grant.sql
+

@@ -1,0 +1,598 @@
+CREATE_PACKAGE_BODY(SDE_Utility)
+is
+/*****************************************************************
+* Package Info
+* Author          : $Author: jothor $
+* Original Date   : $Date: 2011/04/07 05:47:51 $
+* Last Modified   : $Modtime: $
+* Archive Name    : $Archive: $
+* Description     : $Header: F:\Private\Repository/ITOPP-UBA/Gis/Procedure/SDE_Utility.pcb,v 1.8 2011/04/07 05:47:51 jothor Exp $
+* Revision History: $Revision: 1.8 $
+* Tag name        : $Name:  $
+* Workfile        : $Workfile: $
+* Copyright info  : Copyright (c), Statoil ASA,Norway. $Date: 2011/04/07 05:47:51 $
+*****************************************************************
+* Description
+*
+* SDE sytem table codes: http://webhelp.esri.com/arcgisserver/9.3.1/dotNet/index.htm#geodatabases/system_1203016261.htm
+*****************************************************************
+* Log
+* Date   Description                                      Done by
+* 010311 Introduced removeOrphanedProcess using nodename   Jothor
+*  and also via start/end date
+*****************************************************************/
+  PACKAGE_VARIABLE($Revision: 1.8 $);
+
+/*****************************************************************
+* Variable - initialize variables in the constructor.
+* xInitialized   indicates whether package is initialized or not
+
+*****************************************************************/
+  xInitialized boolean;
+  xSql varchar2(2000);
+--  xDryRun boolean := false;
+
+/*****************************************************************
+* SDE codes
+*****************************************************************/
+
+/*****************************************************************
+*  SELECT s.username, s.sid, s.serial#, s.osuser, k.ctime, o.object_name
+*  object, k.kaddr, DECODE(l.locked_mode,
+*    1, 'No Lock',
+*    2, 'Row Share',
+*    3, 'Row Exclusive',
+*    4, 'Shared Table',
+*    5, 'Shared Row Exclusive',
+*    6, 'Exclusive') locked_mode,  DECODE(k.type,
+*      'BL','Buffer Cache Management (PCM lock)',
+*    'CF','Controlfile Transaction',
+*    'CI','Cross Instance Call',
+*    'CU','Bind Enqueue',
+*    'DF','Data File',
+*    'DL','Direct Loader',
+*    'DM','Database Mount',
+*    'DR','Distributed Recovery',
+*    'DX','Distributed Transaction',
+*    'FS','File Set',
+*    'IN','Instance Number',
+*    'IR','Instance Recovery',
+*    'IS','Instance State',
+*    'IV','Library Cache Invalidation',
+*    'JQ','Job Queue',
+*    'KK','Redo Log Kick',
+*    'LA','Library Cache Lock',
+*    'LB','Library Cache Lock',
+*    'LC','Library Cache Lock',
+*    'LD','Library Cache Lock',
+*    'LE','Library Cache Lock',
+*    'LF','Library Cache Lock',
+*    'LG','Library Cache Lock',
+*    'LH','Library Cache Lock',
+*    'LI','Library Cache Lock',
+*    'LJ','Library Cache Lock',
+*    'LK','Library Cache Lock',
+*    'LL','Library Cache Lock',
+*    'LM','Library Cache Lock',
+*    'LN','Library Cache Lock',
+*    'LO','Library Cache Lock',
+*    'LP','Library Cache Lock',
+*    'MM','Mount Definition',
+*    'MR','Media Recovery',
+*    'NA','Library Cache Pin',
+*    'NB','Library Cache Pin',
+*    'NC','Library Cache Pin',
+*    'ND','Library Cache Pin',
+*    'NE','Library Cache Pin',
+*    'NF','Library Cache Pin',
+*    'NG','Library Cache Pin',
+*    'NH','Library Cache Pin',
+*    'NI','Library Cache Pin',
+*    'NJ','Library Cache Pin',
+*    'NK','Library Cache Pin',
+*    'NL','Library Cache Pin',
+*    'NM','Library Cache Pin',
+*    'NN','Library Cache Pin',
+*    'NO','Library Cache Pin',
+*    'NP','Library Cache Pin',
+*    'NQ','Library Cache Pin',
+*    'NR','Library Cache Pin',
+*    'NS','Library Cache Pin',
+*    'NT','Library Cache Pin',
+*    'NU','Library Cache Pin',
+*    'NV','Library Cache Pin',
+*    'NW','Library Cache Pin',
+*    'NX','Library Cache Pin',
+*    'NY','Library Cache Pin',
+*    'NZ','Library Cache Pin',
+*    'PF','Password File',
+*    'PI','Parallel Slaves',
+*    'PR','Process Startup',
+*    'PS','Parallel Slave Synchronization',
+*    'QA','Row Cache Lock',
+*    'QB','Row Cache Lock',
+*    'QC','Row Cache Lock',
+*    'QD','Row Cache Lock',
+*    'QE','Row Cache Lock',
+*    'QF','Row Cache Lock',
+*    'QG','Row Cache Lock',
+*    'QH','Row Cache Lock',
+*    'QI','Row Cache Lock',
+*    'QJ','Row Cache Lock',
+*    'QK','Row Cache Lock',
+*    'QL','Row Cache Lock',
+*    'QM','Row Cache Lock',
+*    'QN','Row Cache Lock',
+*    'QO','Row Cache Lock',
+*    'QP','Row Cache Lock',
+*    'QQ','Row Cache Lock',
+*    'QR','Row Cache Lock',
+*    'QS','Row Cache Lock',
+*    'QT','Row Cache Lock',
+*    'QU','Row Cache Lock',
+*    'QV','Row Cache Lock',
+*    'QW','Row Cache Lock',
+*    'QX','Row Cache Lock',
+*    'QY','Row Cache Lock',
+*    'QZ','Row Cache Lock',
+*    'RT','Redo Thread',
+*    'SC','System Commit number',
+*    'SM','SMON synchronization',
+*    'SN','Sequence Number',
+*    'SQ','Sequence Enqueue',
+*    'SR','Synchronous Replication',
+*    'SS','Sort Segment',
+*    'ST','Space Management Transaction',
+*    'SV','Sequence Number Value',
+*    'TA','Transaction Recovery',
+*    'TM','DML Enqueue',
+*    'TS','Table Space (or Temporary Segment)',
+*    'TT','Temporary Table',
+*    'TX','Transaction',
+*    'UL','User-defined Locks',
+*    'UN','User Name',
+*    'US','Undo segment Serialization',
+*    'WL','Writing redo Log',
+*    'XA','Instance Attribute Lock',
+*    'XI','Instance Registration Lock') type
+******************************************************************/
+
+
+/*****************************************************************
+* Standard methods
+*****************************************************************/
+  STD_PACKAGE_METHOD;
+
+/*****************************************************************
+* Init : Initializes the package
+* Init is called by the constructor.
+*****************************************************************/
+  FUNCTION(isInitialized)
+    return boolean
+  is
+  begin
+    MCR_RETURN(xInitialized);
+  END_FUNCTION;
+
+/*****************************************************************
+* Given the feature class, it finds the associated A-table
+* If it does not exist, null is returned.
+*****************************************************************/
+   FUNCTION(sdeFind_A_table)(lFeatureClass sde.table_registry.table_name%type)
+      return sde.table_registry.table_name%type
+   is
+      cursor cur_data(lFeatureClass sde.table_registry.table_name%type)
+      is
+      with xres as (select * from sde.table_registry where table_name = lFeatureClass)
+      select u.table_name
+         from user_tables u,xres 
+         where u.table_name like 'A'||xres.registration_id;
+      lA_table sde.table_registry.table_name%type := null;
+   begin
+      for i in cur_data(lFeatureClass)
+      loop
+         lA_table := i.table_name;
+      end loop;
+      return lA_table;
+   END_FUNCTION;
+
+/*****************************************************************
+* Do not provide lDryRun with a default value.
+*****************************************************************/
+  PROCEDURE(executeSql)(lSql varchar2,lDryRun boolean)
+  is
+  begin
+      if (lSql is null) then
+         return;
+      end if;
+      if (lDryRun = true) then
+         DEBUG('DryRun: '||lSql);
+         return;
+      end if;
+
+      execute immediate lSql;
+--      return sql%rowcount;
+  EXCEPTION_BLOCK
+	THROW_EXCEPTION_HANDLER;
+  END_PROCEDURE;
+
+/*****************************************************************
+* http://support.esri.com/index.cfm?fa=knowledgebase.techarticles.articleShow&d=34258
+* Remove orphaned keyset tables in Oracle
+* ArcGIS keyset tables are used by the geodatabase for quickly traversing origin and destination
+* relationship classes, when the input set exceeds 100 objects.
+* The keyset table is uniquely identified by the name KEYSET_<n>, where <n> is the ArcSDE session
+* identifier (the session identifier is persisted in the SDE metadata table process_information).
+* A new keyset table is created for each session when the session either starts editing a workspace
+* (to ensure the table exists prior to any database transactions starting), or when attempting to traverse
+* between an origin or destination class for 100 or more objects.
+* The keyset table has an attribute for each supported geodatabase type and an additional attribute to
+* identify each keyset collection. The keyset table is used in the SQL statement as a join table between the
+* origin and destination classes.
+* In DB2, Informix, and SQL Server databases, the keyset table is created as a temporary table. In Oracle
+* databases, when a user who has CREATE TABLE privileges causes a keyset table to be created, the keyset
+* table is stored in the user's schema. If a user does not have CREATE TABLE privileges, a procedure is
+* invoked to create the keyset table in the ArcSDE administrator's schema.
+* When the session terminates, the keyset table is dropped. If the session terminates abnormally and is
+* not able to drop the keyset table, then the table is orphaned and can be manually dropped using SQL.
+* Procedure
+* Instructions provided describe how to removed orphaned keyset tables in Oracle. The following Oracle SQL
+* procedure detects all keyset tables a session has select privileges on from the all_tables view. The
+* procedure loops through each table and verifies if the session that owns the keyset table is valid or
+* not by checking the sde.process_information table. If the session is not valid, the keyset table is
+* dropped. If the session is not valid and entries exist in the sde.process_information table, those entries are deleted.
+* When the procedure completes, it reports the total number of keyset tables dropped.
+* The procedure should be executed by a session that has the privilege DROP ANY TABLE or by the SYS or SYSTEM user. 
+*****************************************************************/
+  PROCEDURE(removeOrphanedKeyset)(lDryRun boolean default false)
+  is
+   cursor all_keysets is
+   select owner, table_name
+   from all_tables
+   where table_name like 'KEYSET_%';
+
+   sess_id integer;
+   valid_sess integer;
+   lock_name varchar2(30);
+   lock_handle varchar2(128);
+   lock_status integer;
+   cnt integer default 0;
+   lSql varchar2(2000);
+   begin
+      LOG(LEVEL_HIGH,'Must be tested - dont like the drop table further down.Removed orphaned process_information entry');
+      return;
+-- / * ----------- not test nor fully understood.
+      for drop_keysets in all_keysets loop
+         sess_id := to_number(substr(drop_keysets.table_name, 8));
+         select count(*) into valid_sess 
+            from sde.process_information 
+            where owner = drop_keysets.owner 
+            and sde_id = sess_id;
+
+         if valid_sess = 1 then
+            lock_name := 'SDE_Connection_ID#' || to_char (sess_id);
+            dbms_lock.allocate_unique (lock_name,lock_handle);
+            lock_status := dbms_lock.request (lock_handle,dbms_lock.x_mode,0,true);
+
+            if lock_status = 0 then
+               lSql := 'delete from sde.process_information where sde_id = '||sess_id;
+               executeSql(lSql,lDryRun);
+               lSql := 'delete from sde.state_locks where sde_id = '||sess_id;
+               executeSql(lSql,lDryRun);
+               lSql := 'delete from sde.table_locks where sde_id = '||sess_id;
+               executeSql(lSql,lDryRun);
+               lSql := 'delete from sde.object_locks where sde_id = '||sess_id;
+               executeSql(lSql,lDryRun);
+               lSql := 'delete from sde.layer_locks where sde_id = '||sess_id;
+               executeSql(lSql,lDryRun);
+
+               LOG(LEVEL_INFO,'Removed orphaned process_information entry ('||sess_id||')');
+               LOG(LEVEL_INFO,'Dropped table '||drop_keysets.owner||'.'||drop_keysets.table_name);
+               executeSql('drop table '||drop_keysets.owner||'.'||drop_keysets.table_name,lDryRun);
+               cnt := cnt + 1;
+               executeSql('commit',lDryRun);
+            end if;
+         else
+            executeSql('drop table '||drop_keysets.owner||'.'||drop_keysets.table_name,lDryRun);
+            LOG(LEVEL_INFO,'Dropped table '||drop_keysets.owner||'.'||drop_keysets.table_name);
+            cnt := cnt + 1;
+         end if;
+      end loop;
+-- * /
+      LOG(LEVEL_INFO,'Dropped '||cnt||' keyset tables.'); 
+  EXCEPTION_BLOCK
+	STD_EXCEPTION_HANDLER;
+  END_PROCEDURE;
+
+/***********************************************************************
+* NOTE: May be necessary to perform a "pskill" on the server itself.
+* The sde.process_information contains information on the process id in
+* the column "server_id". This must be captured before deleting rows
+* sde.process_information
+*
+* More details 9.2: http://support.esri.com/index.cfm?fa=knowledgebase.techarticles.articleShow&d=33982
+* Possible solution (not the best though): Set "HKLM\System\CurrentControlSet\Services\Tcpip\Parameters\KeepAliveTime (REG_DWORD)" to 300000 (ms)
+*
+* Removes all orphaned processes and orphaned lock entries.
+* ------------------------------------------------------
+* http://forums.esri.com/Thread.asp?c=2&f=59&t=174046
+* removeOrphanedProcess:
+* No need to report this to ESRI, the software handles false lock conflicts when encountered.
+* When a process requests a shared or exclusive lock (on any object) we first check
+* to see if there are any locks present (example: if requesting a shared lock, we only
+* check for exclusive locks or when requesting an exclusive we check for all locks). If a lock
+* is detected, we validate the lock owner (the sde_id) is still a valid session by checking
+* against a lock in memory (held by Oracle via the dbms_lock package).
+*
+* If the process is not connected, we then know the row has been orphaned and it will be
+* deleted thus allowing the consummer to acquire the shared or exclusive lock.
+*
+* removeOrphanedTableLock: 
+* You can execute the following cleanup procedure to purge those rows if it is a concern
+* (but the software will do it when it needs to anyhow) so you do NOT need to shutdown your ArcSDE instance
+*
+************************************************************************/
+  PROCEDURE(removeOrphanedTableLock)(lDryRun boolean default false)
+  is
+   lSql varchar2(2000);
+  begin
+      ---------------------------------------------------------------------
+      -- Purges orphaned lock-tables.
+      ---------------------------------------------------------------------
+      lSql := 'delete from sde.state_locks where sde_id not in (select sde_id from sde.process_information)';
+      executeSql(lSql,lDryRun);
+      lSql := 'delete from sde.table_locks where sde_id not in (select sde_id from sde.process_information)';
+      executeSql(lSql,lDryRun);
+      lSql := 'delete from sde.object_locks where sde_id not in (select sde_id from sde.process_information)';
+      executeSql(lSql,lDryRun);
+      lSql := 'delete from sde.layer_locks where sde_id not in (select sde_id from sde.process_information)';
+      executeSql(lSql,lDryRun);
+
+      executeSql('commit',lDryRun);
+  EXCEPTION_BLOCK
+	STD_EXCEPTION_HANDLER;
+  END_PROCEDURE;
+
+
+/***********************************************************
+* Should run removeOrphanedTableLock afterwards.
+***********************************************************/
+  PROCEDURE(removeOrphanedProcess)(lDryRun boolean default false)
+  is
+   cursor process_list is
+      select sde_id
+            ,owner
+            ,nodename
+            ,start_time
+            ,server_id
+            ,direct_connect
+      from sde.process_information
+      order by start_time asc;
+
+   lock_name varchar2(30);
+   lock_handle varchar2(128);
+   lock_status integer;
+   cnt integer default 0; 
+   lSql varchar2(2000);
+   lCount integer;
+  begin
+      ---------------------------------------------------------------------
+      -- DECODE(l.locked_mode,
+      --  1, 'No Lock',
+      --  2, 'Row Share',
+      --  3, 'Row Exclusive',
+      --  4, 'Shared Table',
+      --  5, 'Shared Row Exclusive',
+      --  6, 'Exclusive') locked_mode,
+      ---------------------------------------------------------------------
+      for check_locks in process_list loop
+         lock_name := 'SDE_Connection_ID#' || to_char (check_locks.sde_id);
+         dbms_lock.allocate_unique(lock_name,lock_handle);
+         lock_status := dbms_lock.request(lock_handle,DBMS_LOCK.X_MODE,0,true);
+         if lock_status = 0 then
+            lSql := 'delete from sde.state_locks where sde_id = '||check_locks.sde_id;
+            executeSql(lSql,lDryRun);
+            lSql := 'delete from sde.table_locks where sde_id = '||check_locks.sde_id;
+            executeSql(lSql,lDryRun);
+            lSql := 'delete from sde.object_locks where sde_id = '||check_locks.sde_id;
+            executeSql(lSql,lDryRun);
+            lSql := 'delete from sde.layer_locks where sde_id = '||check_locks.sde_id;
+            executeSql(lSql,lDryRun);
+            lSql := 'delete from sde.process_information where sde_id = '||check_locks.sde_id;
+            executeSql(lSql,lDryRun);
+
+            cnt := cnt + 1;
+            DEBUG('Removed entry ('|| check_locks.sde_id|| '): '|| check_locks.owner|| '/'|| check_locks.nodename||'. Start time:'||to_char(check_locks.start_time,'dd.mm.yyyy hh24:mi:ss'));
+         end if;
+      end loop;
+
+      executeSql('commit',lDryRun);
+
+      LOG(LEVEL_INFO,'Removed ' || cnt || ' entries.');
+  EXCEPTION_BLOCK
+	STD_EXCEPTION_HANDLER;
+  END_PROCEDURE;
+
+  PROCEDURE(removeOrphanedProcess)(lNodeName varchar2,lDryRun boolean default false)
+  is
+   cursor process_list(lNodeName varchar2) is
+      select sde_id
+            ,owner
+            ,nodename
+            ,start_time
+            ,server_id
+            ,direct_connect
+      from sde.process_information
+      where nodename = lNodeName
+      order by start_time asc;
+
+   lock_name varchar2(30);
+   lock_handle varchar2(128);
+   lock_status integer;
+   cnt integer default 0; 
+   lSql varchar2(2000);
+   lCount integer;
+  begin
+      if (lNodeName is null) then
+         return;
+      end if;
+
+      ---------------------------------------------------------------------
+      -- DECODE(l.locked_mode,
+      --  1, 'No Lock',
+      --  2, 'Row Share',
+      --  3, 'Row Exclusive',
+      --  4, 'Shared Table',
+      --  5, 'Shared Row Exclusive',
+      --  6, 'Exclusive') locked_mode,
+      ---------------------------------------------------------------------
+      for check_locks in process_list(lNodeName) loop
+         lock_name := 'SDE_Connection_ID#' || to_char (check_locks.sde_id);
+         dbms_lock.allocate_unique(lock_name,lock_handle);
+         lock_status := dbms_lock.request(lock_handle,DBMS_LOCK.X_MODE,0,true);
+         if lock_status = 0 then
+            lSql := 'delete from sde.state_locks where sde_id = '||check_locks.sde_id;
+            executeSql(lSql,lDryRun);
+            lSql := 'delete from sde.table_locks where sde_id = '||check_locks.sde_id;
+            executeSql(lSql,lDryRun);
+            lSql := 'delete from sde.object_locks where sde_id = '||check_locks.sde_id;
+            executeSql(lSql,lDryRun);
+            lSql := 'delete from sde.layer_locks where sde_id = '||check_locks.sde_id;
+            executeSql(lSql,lDryRun);
+            lSql := 'delete from sde.process_information where sde_id = '||check_locks.sde_id;
+            executeSql(lSql,lDryRun);
+
+            cnt := cnt + 1;
+            DEBUG('Removed entry ('|| check_locks.sde_id|| '): '|| check_locks.owner|| '/'|| check_locks.nodename||'. Start time:'||to_char(check_locks.start_time,'dd.mm.yyyy hh24:mi:ss'));
+         end if;
+      end loop;
+
+      executeSql('commit',lDryRun);
+
+      LOG(LEVEL_INFO,'Removed ' || cnt || ' entries.');
+  EXCEPTION_BLOCK
+	STD_EXCEPTION_HANDLER;
+  END_PROCEDURE;
+
+  PROCEDURE(removeOrphanedProcess)(lStartDate date, lEndDate date,lDryRun boolean default false)
+  is
+   cursor process_list(lStartDate date, lEndDate date) is
+      select sde_id
+            ,owner
+            ,nodename
+            ,start_time
+            ,server_id
+            ,direct_connect
+      from sde.process_information
+      where start_time between lStartDate and lEndDate
+      order by start_time asc;
+
+   lock_name varchar2(30);
+   lock_handle varchar2(128);
+   lock_status integer;
+   cnt integer default 0; 
+   lSql varchar2(2000);
+   lCount integer;
+   lStartDate_2 date;
+   lEndDate_2 date;
+  begin
+      if (lStartDate is null) then
+         lStartDate_2 := to_date('2000','yyyy');
+      else
+         lStartDate_2 := lStartDate;
+      end if;
+      if (lEndDate is null) then
+         lEndDate_2 := to_date('2100','yyyy');
+      else
+         lEndDate_2 := lEndDate;
+      end if;
+
+      if (lStartDate_2 > lEndDate_2) then
+         USERERROR(10,lStartDate_2,lEndDate_2);
+      end if;
+
+      ---------------------------------------------------------------------
+      -- DECODE(l.locked_mode,
+      --  1, 'No Lock',
+      --  2, 'Row Share',
+      --  3, 'Row Exclusive',
+      --  4, 'Shared Table',
+      --  5, 'Shared Row Exclusive',
+      --  6, 'Exclusive') locked_mode,
+      ---------------------------------------------------------------------
+      for check_locks in process_list(lStartDate_2,lEndDate_2) loop
+         lock_name := 'SDE_Connection_ID#' || to_char (check_locks.sde_id);
+         dbms_lock.allocate_unique(lock_name,lock_handle);
+         lock_status := dbms_lock.request(lock_handle,DBMS_LOCK.X_MODE,0,true);
+         if lock_status = 0 then
+            lSql := 'delete from sde.state_locks where sde_id = '||check_locks.sde_id;
+            executeSql(lSql,lDryRun);
+            lSql := 'delete from sde.table_locks where sde_id = '||check_locks.sde_id;
+            executeSql(lSql,lDryRun);
+            lSql := 'delete from sde.object_locks where sde_id = '||check_locks.sde_id;
+            executeSql(lSql,lDryRun);
+            lSql := 'delete from sde.layer_locks where sde_id = '||check_locks.sde_id;
+            executeSql(lSql,lDryRun);
+            lSql := 'delete from sde.process_information where sde_id = '||check_locks.sde_id;
+            executeSql(lSql,lDryRun);
+
+            cnt := cnt + 1;
+            DEBUG('Removed entry ('|| check_locks.sde_id|| '): '|| check_locks.owner|| '/'|| check_locks.nodename||'. Start time:'||to_char(check_locks.start_time,'dd.mm.yyyy hh24:mi:ss'));
+         end if;
+      end loop;
+
+      executeSql('commit',lDryRun);
+
+      LOG(LEVEL_INFO,'Removed ' || cnt || ' entries.');
+  EXCEPTION_BLOCK
+	STD_EXCEPTION_HANDLER;
+  END_PROCEDURE;
+
+  PROCEDURE(removeSDEOrphanes) (lDryRun boolean default false)
+  is
+  begin
+      ---------------------------------------------------------------------
+      -- 
+      ---------------------------------------------------------------------
+      removeOrphanedProcess(lDryRun);
+
+      ---------------------------------------------------------------------
+      -- Purges orphaned lock-tables.
+      ---------------------------------------------------------------------
+      removeOrphanedTableLock(lDryRun);
+
+      executeSql('commit',lDryRun);
+  EXCEPTION_BLOCK
+	STD_EXCEPTION_HANDLER;
+  END_PROCEDURE;
+
+  PROCEDURE(listProcess)
+  is
+    cursor lProcess
+      is select a.owner||'.'||a.table_name locked_table
+         , a.registration_id
+         ,b.owner locked_by
+         , b.nodename connect_source
+         , b.start_time 
+         from sde.table_registry a
+            , sde.process_information b
+            , sde.table_locks c
+         where a.registration_id = c.registration_id
+         and b.sde_id = c.sde_id;
+  begin
+    null;
+  EXCEPTION_BLOCK
+	STD_EXCEPTION_HANDLER;
+  END_PROCEDURE;
+
+/*********************************************
+* The constructor
+*********************************************/
+begin
+  xInitialized := FALSE;
+
+  -- Last statement to be executed
+  xInitialized := true;
+EXCEPTION
+  	STD_EXCEPTION_HANDLER;
+END_CREATE_PACKAGE_BODY;

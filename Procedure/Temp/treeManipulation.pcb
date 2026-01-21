@@ -1,0 +1,310 @@
+CREATE_PACKAGE_BODY(treeManipulation)
+is
+/*****************************************************************
+* Package Info
+* Author        : $Author: JOTHOR $
+* Original Date   : $Date: 2006/10/09 07:18:10 $
+* Last Modified   : $Modtime: $
+* Archive Name    : $Archive: $
+* Description     : $Header: f:\private\repository/dbr/Procedure/treeManipulation.pcb,v 2.3 2006/10/09 07:18:10 JOTHOR Exp $
+* Revision History  : $Revision: 2.3 $
+* Workfile      : $Workfile: $
+* Copyright info  : Copyright (c), Statoil ASA,Norway. $Date: 2006/10/09 07:18:10 $
+*****************************************************************
+* Description
+*
+*
+*****************************************************************
+* Log
+* Date  Description                                      Done by
+*****************************************************************/
+  PACKAGE_VARIABLE($Revision: 2.3 $);
+
+/*****************************************************************
+* Variable - initialize variables in the constructor.
+* xInitialized   indicates whether package is initialized or not
+* xTable - The table containing the tree structure
+* xColumn - the column containing the current value
+* xParent - the column containing the link to the parent
+* xConnectBy - the sql string which connects the tree together.
+*****************************************************************/
+  xInitialized boolean;
+  xTable type_Name;
+  xColumn type_Name;
+  xParent type_Name;
+  xSql varchar2(4000);
+  xConnectBy varchar2(4000);
+
+/*****************************************************************
+* Standard methods
+*****************************************************************/
+  STD_PACKAGE_METHOD;
+
+/*****************************************************************
+* Init : Initializes the package
+* Init is called by the constructor.
+*****************************************************************/
+  FUNCTION(isInitialized)
+    return boolean
+  is
+  begin
+    MCR_RETURN(xInitialized);
+  END_FUNCTION;
+
+/*****************************************************************
+* Internal methods
+*****************************************************************/
+  FUNCTION(getConnectBy) return varchar2
+  is
+  begin
+      MCR_RETURN(xConnectBy);
+  EXCEPTION_BLOCK
+	STD_EXCEPTION_HANDLER;
+  END_PROCEDURE;
+  
+  FUNCTION(getSql) return varchar2
+  is
+  begin
+      return 'select * from '
+         || getTable
+         || ' ' || getConnectBy;
+  EXCEPTION_BLOCK
+	THROW_EXCEPTION_HANDLER;
+  END_PROCEDURE;
+
+  FUNCTION(createSql)(lSql varchar2)
+      return varchar2
+  is
+     lStr varchar2(4000);
+  begin
+      lStr := lSql;
+      lStr := replace(lStr,'ZZ_table',getTable);
+      lStr := replace(lStr,'ZZ_column',getColumn);
+      lStr := replace(lStr,'ZZ_parent',getParent);
+      MCR_RETURN (lStr);
+  EXCEPTION_BLOCK
+	THROW_EXCEPTION_HANDLER;
+  END_PROCEDURE;
+/*****************************************************************
+* Public methods
+*****************************************************************/
+  FUNCTION(getTable) return type_Name
+    is
+  begin
+      MCR_RETURN(xTable);
+  EXCEPTION_BLOCK
+	STD_EXCEPTION_HANDLER;
+  END_PROCEDURE;
+
+  FUNCTION(getColumn) return type_Name
+    is
+  begin
+      MCR_RETURN(xColumn);
+  EXCEPTION_BLOCK
+	STD_EXCEPTION_HANDLER;
+  END_PROCEDURE;
+
+  FUNCTION(getParent) return type_Name
+    is
+  begin
+      MCR_RETURN(xParent);
+  EXCEPTION_BLOCK
+	STD_EXCEPTION_HANDLER;
+  END_PROCEDURE;
+
+  PROCEDURE(setTable)(lTable varchar2)
+  is
+  begin
+     if (lTable is null) then
+        USERERROR(11,'table');
+     end if;
+ 
+     xTable := lTable;
+  EXCEPTION_BLOCK
+	STD_EXCEPTION_HANDLER;
+  END_PROCEDURE;
+
+  PROCEDURE(setColumn)(lColumn varchar2)
+  is
+  begin
+     if (lColumn is null) then
+        USERERROR(11,'column');
+     end if;
+
+      xColumn := lColumn;
+  EXCEPTION_BLOCK
+	STD_EXCEPTION_HANDLER;
+  END_PROCEDURE;
+
+  PROCEDURE(setParent)(lParent varchar2)
+  is
+  begin
+     if (lParent is null) then
+        USERERROR(11,'parent');
+     end if;
+
+     xParent := lParent;
+  EXCEPTION_BLOCK
+	STD_EXCEPTION_HANDLER;
+  END_PROCEDURE;
+
+  PROCEDURE(setConnectBy)(lConnectBy varchar2)
+  is
+  begin
+     if (lConnectBy is null) then
+        USERERROR(11,'connect by');
+     end if;
+
+     xConnectBy := lConnectBy;
+  EXCEPTION_BLOCK
+	STD_EXCEPTION_HANDLER;
+  END_PROCEDURE;
+
+  PROCEDURE(setDetail)(lTable varchar2,lColumn varchar2, lParent varchar2)
+  is
+  begin
+      setTable(lTable);
+      setColumn(lColumn);
+      setParent(lParent);
+  EXCEPTION_BLOCK
+	STD_EXCEPTION_HANDLER;
+  END_PROCEDURE;
+
+  PROCEDURE(displayDetail)
+  is
+  begin
+    LOG(LEVEL_INFO,'Table : <'||getTable||'> Column : <'||getColumn||'> Parent : <'||getParent||'>');
+  EXCEPTION_BLOCK
+	STD_EXCEPTION_HANDLER;
+  END_PROCEDURE;
+
+  PROCEDURE(selectSet)(lCursor out t_cursor)
+  is
+  begin
+      open lCursor for getSql;
+      DEBUG('Sql <'||getSql||'>');
+  EXCEPTION_BLOCK
+	STD_EXCEPTION_HANDLER;
+  END_PROCEDURE;
+
+/*****************************************************************
+* Data access and manipulation methods 
+*****************************************************************/
+  PROCEDURE(deleteBranch)(lRoot varchar2,lElement varchar2)
+  is
+  begin
+
+      xSql := createSql('delete from ZZ_table'
+             || ' where id in (select from ZZ_table'
+             || ' start with ZZ_parent = ' || lElement
+             || ' connect by ZZ_column = prior ZZ_parent');
+     execute immediate xSql;
+  EXCEPTION_BLOCK
+	STD_EXCEPTION_HANDLER;
+  END_PROCEDURE;
+
+  PROCEDURE(deleteElement)(lRoot varchar2,lElement varchar2)
+  is
+      lParent type_Name;
+  begin
+      ---------------------------------------
+      -- Get the parent for the element to be
+      -- deleted
+      ---------------------------------------
+      xSql := 'select ' || getParent || ' from ' || getTable
+            || ' where ' || getColumn || ' = ' || lElement;
+      execute immediate xSql into lParent;
+
+      ---------------------------------------
+      -- Move all children up to the elements 
+      -- parent.
+      ---------------------------------------
+      xSql := 'update '|| getTable
+            || ' set ' || getParent || ' = ' || lParent
+            || ' where ' || getParent || ' = ' || lElement;
+      execute immediate xSql into lParent;
+
+      ---------------------------------------
+      -- Remove the element.
+      ---------------------------------------
+      xSql := 'delete from ' || getTable
+            || ' where ' || getColumn || ' = ' || lElement;
+      execute immediate xSql;
+      
+  EXCEPTION_BLOCK
+	STD_EXCEPTION_HANDLER;
+  END_PROCEDURE;
+
+
+/*
+  PROCEDURE(select_treeManipulation)(para1,...      
+   ,lCursor out t_cursor
+   )
+  is
+  begin
+
+  EXCEPTION_BLOCK
+	STD_EXCEPTION_HANDLER;
+  END_PROCEDURE;
+
+  PROCEDURE(insert_treeManipulation)(
+          lRowCount out integer
+         ,lSuid out dbr.<entity>.<s_key>%type
+         [,para1,... ]
+         )
+  is
+  begin
+      START_TRANSACTION;
+      <your code here>
+      COMMIT;
+      END_TRANSACTION;
+  EXCEPTION_BLOCK
+	STD_EXCEPTION_HANDLER;
+  END_PROCEDURE;
+
+  PROCEDURE(update_treeManipulation)(
+          lRowCount out integer
+         ,lSuid dbr.<entity>.<s_key>%type
+         ,lTimestamp dbr.<entity>.time_stamp%type
+         [,para1,... ]
+         )
+  is
+  begin
+      START_TRANSACTION;
+      <your code here>
+      COMMIT;
+      END_TRANSACTION;
+  EXCEPTION_BLOCK
+	STD_EXCEPTION_HANDLER;
+  END_PROCEDURE;
+
+  PROCEDURE(delete_treeManipulation)(
+          lRowCount out integer
+         ,lSuid dbr.<entity>.<s_key>%type
+         ,lTimestamp dbr.<entity>.time_stamp%type
+         [,para1,... ]
+         )
+  is
+  begin
+      START_TRANSACTION;
+      <your code here>
+      COMMIT;
+      END_TRANSACTION;
+  EXCEPTION_BLOCK
+	STD_EXCEPTION_HANDLER;
+  END_PROCEDURE;
+*/
+/*********************************************
+* The constructor
+*********************************************/
+begin
+  xInitialized := FALSE;
+  xTable := null;
+  xColumn := null;
+  xParent := null;
+
+  -- Last statement to be executed
+  xInitialized := true;
+EXCEPTION
+  	STD_EXCEPTION_HANDLER;
+END_CREATE_PACKAGE_BODY;

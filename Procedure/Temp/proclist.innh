@@ -1,0 +1,25 @@
+
+#Load the procedures
+ErrorHandler.pck
+ErrorHandler.pcb
+IT_Constant.pck
+Common.pck
+Common.pcb
+Mangage_MAIL.pck
+Mangage_MAIL.pcb
+SF_UpdateBatchStatus.pcb
+checkEpsilon.prc
+cleanUpLogTable.pcb
+recompile_invalid_objects.pcb
+transactionHandling.pck
+transactionHandling.pcb
+treeManipulation.pck
+treeManipulation.pcb
+utility.pck
+Utility.pcb
+grantToRbac.prc
+
+# Grants
+grant.sql
+
+

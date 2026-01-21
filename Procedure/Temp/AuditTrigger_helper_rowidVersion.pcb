@@ -1,0 +1,351 @@
+CREATE_PACKAGE_BODY(AuditTrigger_helper)
+is
+/*****************************************************************
+* Package Info
+* Author          : $Author: jothor $
+* Original Date   : $Date: 2011/04/08 10:15:06 $
+* Last Modified   : $Modtime: $
+* Archive Name    : $Archive: $
+* Description     : $Header: f:\private\repository/dbr/Jobs/AuditSdeTable/AuditTrigger_helper_rowidVersion.pcb,v 1.6 2011/04/08 10:15:06 jothor Exp $
+* Revision History: $Revision: 1.6 $
+* Tag name        : $Name:  $
+* Workfile        : $Workfile: $
+* Copyright info  : Copyright (c), Statoil ASA,Norway. $Date: 2011/04/08 10:15:06 $
+*****************************************************************
+* Description
+* The A-table rows can be identified via SDE_STATE_ID.
+* The d-table rows can be identified via SDE_DELETES_STATE_ID.
+*
+* How does the state tree change during an edit session? 
+* See state tree info: http://resources.arcgis.com/content/kbase?fa=articleShow&d=32352
+*
+* Lineage and state tree in SDE:
+* select *
+* from SDE.LINEAGES_MODIFIED
+* where lineage_name = 361366;
+* 
+* select *  -- get the lineage_name
+* from  sde.states
+* where state_id=361411;
+* 
+* select *
+* from  sde.state_lineages
+* where lineage_name = 361366
+* and lineage_id = 361411;  -- sde_state_id
+*****************************************************************
+* Log
+* Date  Description                                      Done by
+*****************************************************************/
+  PACKAGE_VARIABLE($Revision: 1.6 $);
+
+/*****************************************************************
+* Variable - initialize variables in the constructor.
+* xInitialized   indicates whether package is initialized or not
+* xSql  - string containing a sql statement.
+* xParentTable - the base table 
+* xTableName - the A (or D - not handled yet) table.
+* xNewRows - list of rows to be processed.
+* xPrimaryKeyName - The column name containing the primary unique key, 
+*  normally <objectid>.
+*****************************************************************/
+  type recData is record (
+     xSdeStateId type_sdeStateId  -- sde_state_id or sde_deletes_state_id
+    ,xObjectId type_ObjectId  
+    ,isInsert boolean
+    );
+  type rowIdArray is table of recData ;
+
+  xInitialized boolean;
+  xIsReset boolean;
+  xNewRows rowIdArray; -- := rowIdArray;
+  xSql varchar2(4000);
+  xParentTable varchar2(100); -- (should include schema name and) tablename
+  xTableName varchar2(100);   -- (should include schema name and) tablename
+  xPrimaryKeyName varchar2(100); 
+  xTouchDate varchar2(100) := sysdate;  -- ensures all rows receive same date!
+  
+/*****************************************************************
+* Standard methods
+*****************************************************************/
+  STD_PACKAGE_METHOD;
+
+/*****************************************************************
+* Init : Initializes the package
+* Init is called by the constructor.
+*****************************************************************/
+  FUNCTION(isInitialized)
+    return boolean
+  is
+  begin
+    MCR_RETURN(xInitialized);
+  END_FUNCTION;
+
+/*****************************************************************
+* Reset and release any tied up resources
+* Caution:
+* Do not depend on interaction between TRIM and DELETE.
+* Treat nested tables like either fixed-size arrays (and use
+* only DELETE) or stacks (and use only TRIM and EXTEND).
+* See: http://download.oracle.com/docs/cd/E11882_01/appdev.112/e17126/composites.htm#CIHGFJFA
+*****************************************************************/
+  PROCEDURE(reset)(lParentTable varchar2 default '',lDeltaTableName varchar2 default '',lPrimaryKeyName varchar2 default 'objectid')
+  is
+  begin
+     xNewRows.trim(xNewRows.count);
+   --  xNewRows := rowIdArray(); 
+     xParentTable := lParentTable;
+     xTableName := lDeltaTableName;
+     xTouchDate := sysdate;
+     xPrimaryKeyName := lPrimaryKeyName;
+     xIsReset := true;
+  EXCEPTION_BLOCK
+	THROW_EXCEPTION_HANDLER;
+  END_PROCEDURE;
+
+/*****************************************************************
+* Reset and release any tied up resources
+*****************************************************************/
+  PROCEDURE(addKey)(lSdeStateId type_sdeStateId,lObjectId type_ObjectId,isInsert boolean default true)
+  is
+  begin
+     xNewRows.extend(1);
+--     xNewRows(xNewRows.last) := recData();
+     xNewRows(xNewRows.last).xSdeStateId := lSdeStateId;
+     xNewRows(xNewRows.last).xObjectId := lObjectId;
+     xNewRows(xNewRows.last).isInsert := isInsert;
+  EXCEPTION_BLOCK
+	THROW_EXCEPTION_HANDLER;
+  END_PROCEDURE;
+
+  PROCEDURE(execute)(lSql varchar2)
+  is
+  begin
+     execute immediate lSql;
+  EXCEPTION_BLOCK
+	THROW_EXCEPTION_HANDLER;
+  END_PROCEDURE;
+
+  PROCEDURE(output)(lStr varchar2)
+  is
+  begin
+     DEBUG(lStr);
+/*     LOG(LEVEL_INFO,lStr);*/
+  EXCEPTION_BLOCK
+	THROW_EXCEPTION_HANDLER;
+  END_PROCEDURE;
+
+  PROCEDURE(display)
+  is
+  begin
+     output('Parent table: '|| xParentTable);
+     output('A table     : '|| xTableName);
+     output('--- Start -------------------------------------');
+     if (xNewRows.count > 0) then
+       for i in xNewRows.first .. xNewRows.last
+       loop
+          if (xNewRows(i).isInsert) then
+            output('The SdeStateId='|| xNewRows(i).xSdeStateId || ' '||xPrimaryKeyName||'=' || xNewRows(i).xObjectId || ' isInsert=true');
+          else
+            output('The SdeStateId='|| xNewRows(i).xSdeStateId || ' '||xPrimaryKeyName||'=' || xNewRows(i).xObjectId || ' isInsert=false');
+          end if;
+       end loop;
+     end if;
+     output('--- End -------------------------------------');
+  EXCEPTION_BLOCK
+	THROW_EXCEPTION_HANDLER;
+  END_PROCEDURE;
+
+  PROCEDURE(performUpdate)
+  is
+    lCount integer;
+    lSdeStateId integer;
+    lCreateUser varchar2(100);
+    lCreateDate date;
+    lIsNewObject boolean := false;
+    lLineageName sde.states.lineage_name%type := null;
+--    lStr varchar2(500);
+  begin
+    -- -------------------------------------------
+    -- Check to see if action is needed.
+    -- -------------------------------------------
+    if (xNewRows.count = 0 or not isInitialized or not xIsReset) then
+       DEBUG_START;
+       if (xNewRows.count = 0) then 
+         DEBUG('No rows registered.');
+       elsif (not isInitialized) then
+         DEBUG('Not initialized.');
+       elsif (not xIsReset) then
+         DEBUG('Not reset');
+       end if;
+       DEBUG_END;
+
+       MCR_RETURN;
+    end if;
+
+    -- -------------------------------------------
+    -- Choosing to set the reset flag, before any
+    -- exceptions can be raised. This is important.
+    -- Prepare variables
+    -- -------------------------------------------
+    xIsReset := false;
+    xTouchDate := sysdate;
+
+    -- -------------------------------------------
+    -- Begin the actual update process
+    -- -------------------------------------------
+    for i in xNewRows.first .. xNewRows.last
+    loop
+       -- -------------------------------------------
+       -- Initialize the variables for each new loop.
+       -- -------------------------------------------
+       lIsNewObject := false;
+       lCreateUser := null;
+       lCreateDate := null;
+
+       -- -------------------------------------------
+       -- Get the lineage. This is the same for
+       -- for all edits.
+       -- -------------------------------------------
+       if lLineageName is null then
+        begin
+         xSql := 'select lineage_name from sde.states where state_id='||xNewRows(i).xSdeStateId;
+         execute immediate xSql into lLineageName;
+/*           LOG(LEVEL_INFO,'Lineage_name='|| lLineageName);
+*/
+        EXCEPTION_BLOCK
+            THROW_EXCEPTION_HANDLER;
+        end;
+       end if;
+
+       if (xNewRows(i).isInsert) then
+          -- -------------------------------------------
+          -- A set of entries in delta table is the most likely
+          -- situation. All other situations are exceptions to
+          -- the rule.
+          --
+          -- Check to see if one or more instance exists in trigger table
+          -- within the lineage.
+          -- The "<  '||xNewRows(i).xSdeStateId" excludes the current 
+          -- row already being processed.
+          -- and ensures only earlier states are processed.
+          -- -------------------------------------------
+          lCount := 1;
+          begin
+             xSql := 'select min(tab.st_row_create_user),min(tab.st_row_create_date)'
+                   ||' from ' || xTableName || ' tab'
+                   ||' where tab.objectid='||xNewRows(i).xObjectId 
+                   ||' and tab.sde_state_id <  '||xNewRows(i).xSdeStateId
+                   ||' and tab.sde_state_id in ('
+                   ||'   select l.lineage_id from sde.state_lineages l'
+                   ||'    where l.lineage_name = ' ||lLineageName
+                   ||'  )';
+
+            execute immediate xSql into lCreateUser,lCreateDate;
+/*            LOG(LEVEL_INFO,'lCreateUser/lCreateDate='||lCreateUser||'/'||lCreateDate||' sql='||xSql);
+*/
+            if lCreateUser is null then
+               lCount := 0;
+               lCreateDate := null; -- ensure this is null
+            end if;
+          EXCEPTION_BLOCK
+            when too_many_rows then  -- this handles when there was existing non-audited data - 26.10.2010 JOTHOR-dont understand why this is included.
+               lCreateUser := sde_it.it_constant.xNotApplicable;
+               lCreateDate := null;
+            when no_data_found then  -- first occurence of this instance in the A table
+               lCount := 0;
+            THROW_EXCEPTION_HANDLER; -- handles anything else
+          end;
+
+          -- -------------------------------------------
+          -- Does not exist in A table but it may exist in the base table.
+          -- If it exists in base table, then the created by and create
+          -- date are potenially available to the delta table. This
+          -- depends on whether or not the base table contains this data.
+          --
+          -- In this case if lIsNewObject = true => first time.
+          -- In this case if lIsNewObject = false => first entry in delta table.
+          -- -------------------------------------------
+          if (lCount = 0) then
+/* LOG(LEVEL_INFO,'ilCount = 0. No rows found in lineage - checking base table');
+*/
+            begin
+               xSql := 'select st_row_create_user'
+                 ||          ',st_row_create_date'
+                 || ' from ' || xParentTable
+                 || ' where '|| xPrimaryKeyName ||' = '||xNewRows(i).xObjectId;
+               DEBUG(xSql);
+               execute immediate xSql into lCreateUser,lCreateDate;
+/*               LOG(LEVEL_INFO,'lCreateUser/lCreateDate='||lCreateUser||'/'||lCreateDate||' sql='||xSql);
+*/
+            exception
+              when no_data_found then
+/* LOG(LEVEL_INFO,'Setting lIsNewObject := true; when no_data_found then');
+*/
+                lIsNewObject := true;
+              THROW_EXCEPTION_HANDLER;
+            end;
+          end if;
+      
+          -- -------------------------------------------
+          -- Even though an update has been performed,
+          -- a new row is inserted into the A-table. It is
+          -- therefore necessary to update both the create
+          -- columns (captured earlier in lCreateUser and
+          -- lCreateDate) and the update columns.
+          -- -------------------------------------------
+          if (lIsNewObject = true) then
+/* LOG(LEVEL_INFO,'The row is a new object');
+*/
+            xSql := 'update '|| xTableName
+                  || ' set st_row_create_user = user'
+                  ||     ',st_row_create_date = sysdate' -- || xTouchDate
+                  ||     ',st_row_update_user = null'
+                  ||     ',st_row_update_date = null'
+                  || ' where '|| xPrimaryKeyName ||' = '||xNewRows(i).xObjectId
+                  || ' and sde_state_id = '||xNewRows(i).xSdeStateId;
+            DEBUG(xSql);
+/*            LOG(LEVEL_INFO,xSql);
+*/
+            execute immediate xSql;
+            if (sql%rowcount = 0) then
+               SYSTEMERROR(20,'No rows updated. Expected one row to be updated');
+            end if;
+          else
+/* LOG(LEVEL_INFO,'The row is an existing object');
+*/
+            xSql := 'update '|| xTableName
+                  || ' set  st_row_create_user = '''||lCreateUser||''''
+                  ||      ',st_row_create_date = to_date('''||to_char(lCreateDate,'YYYYMMDD HH24MISS')||''',''YYYYMMDD HH24MISS'')'
+                  ||      ',st_row_update_user = user'
+                  ||      ',st_row_update_date = sysdate' -- || xTouchDate 
+                  || ' where '|| xPrimaryKeyName ||' = '||xNewRows(i).xObjectId
+                  || ' and sde_state_id = '||xNewRows(i).xSdeStateId;
+            DEBUG(xSql);
+/*            LOG(LEVEL_INFO,xSql);
+*/
+            execute immediate xSql;
+            if (sql%rowcount = 0) then
+               SYSTEMERROR(20,'No rows updated. Expected one row to be updated');
+            end if;
+          end if;
+       end if;
+    end loop;
+
+  EXCEPTION_BLOCK
+	THROW_EXCEPTION_HANDLER;
+  END_PROCEDURE;
+
+/*********************************************
+* The constructor
+*********************************************/
+begin
+  xInitialized := FALSE;
+  xIsReset := false;
+  xNewRows := rowIdArray();
+
+  -- Last statement to be executed
+  xInitialized := true;
+EXCEPTION
+  	THROW_EXCEPTION_HANDLER;
+END_CREATE_PACKAGE_BODY;
+

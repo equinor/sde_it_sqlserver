@@ -1,0 +1,347 @@
+CREATE_PACKAGE_BODY(TransactionHandling)
+ is
+/***************************************************************************
+*  Package Info
+*   Author          : $Author: JOTHOR $
+*   Original Date   : $Date: 2006/02/14 13:36:57 $
+*   Last Modified   : $Modtime: 13.12.05 15:18 $
+*   Archive Name    : $Archive: /DB/transactionHandling.pcb $
+*   Description     : $Header: F:/Private/Repository/dbr/Procedure/transactionHandling.pcb,v 2.4 2006/02/14 13:36:57 JOTHOR Exp $
+*   Revision History: $Revision: 2.4 $
+*   Workfile        : $Workfile: transactionHandling.pcb $
+*   Copyright info  : Copyright (c), Statoil ASA,Norway. $Date: 2006/02/14 13:36:57 $
+* 
+* Description
+*
+* NOTE: 
+*  1) Never access xNestLevel directly - use the method getTransactionLevel
+*  2) A test script supplied at the bottom of this file.
+* -------------------------------------------------------
+* Sql to detect if in a transaction:
+* select  s.username, t.used_ublk, t.used_urec
+*    from    v$transaction   t
+*           ,v$session       s
+*    where  t.addr     = s.taddr
+*	and s.status = 'ACTIVE'
+*	and s.username = user
+*
+* -------------------------------------------------------
+*****************************************************************************
+* Log
+* Date  Description						Done by
+*
+*****************************************************************************/
+
+   /*Global variables - be carefull with variables starting with <z_> */
+   PACKAGE_VARIABLE($Revision: 2.4 $);
+
+   xCommitRate	   number ; -- the number of business transactions pr commit
+   xCommitCount   number; -- the number of business transactions processed since last commit
+   xNestLevel	   number; -- the number of nested transaction levels
+   xstartDate	   date;
+   xendDate	      date;
+   xinitialized   boolean;
+   xnrBizTrans	   number; -- the number of business transactions.
+   xprocedureName varchar2(100);
+
+/*******************************************************************************
+* Standard method
+*******************************************************************************/
+   STD_PACKAGE_METHOD;
+  
+/*******************************************************************************
+* Returns whether or not a transaction is in progress.
+* True => transactive active
+* False => no transactive active
+*******************************************************************************/
+   FUNCTION(inTransaction)
+      return boolean
+   is
+     lLevel integer;
+   begin
+      lLevel:= dbms_transaction.local_transaction_id;
+/*      select count(*) --s.username, t.used_ublk, t.used_urec
+            into lLevel
+          from v$transaction t
+              ,v$session s
+          where t.addr = s.taddr
+      	and s.status = 'ACTIVE'
+      	and s.username = user;
+      if (lLevel > 0) then
+          return true;
+      end if;
+*/
+      if (lLevel is not null) then
+        MCR_RETURN(true);
+      end if;
+
+      MCR_RETURN(false);
+   END_FUNCTION;
+
+   PROCEDURE(incrNestLevel)
+   is
+   begin
+      xNestLevel := xNestLevel + 1;
+   END_PROCEDURE;
+
+   PROCEDURE(decrNestLevel)
+   is
+   begin
+      if (xNestLevel > 0) then
+         xNestLevel := xNestLevel - 1;
+      end if;
+   END_PROCEDURE;
+
+/*******************************************************************************
+* Transaction strategy procedures
+*******************************************************************************/
+   PROCEDURE(setSavepoint)(pName in varchar2)
+   is
+   begin
+     if (pName is null or pName = '') then 
+       USERERROR(20,'Savepoint name is null or empty string');
+     end if;
+
+     savepoint pName;
+     EXCEPTION_BLOCK
+       STD_EXCEPTION_HANDLER;
+   END_PROCEDURE;
+
+   FUNCTION(getCommitRate) return number
+   is
+   begin
+	RETURN(xCommitRate);
+   END_FUNCTION;
+
+   PROCEDURE(setCommitRate)(pCommitRate IN INTEGER)
+   is
+   begin
+     if (pCommitRate < 0) then
+        USERERROR(20,'Error occurred whilst setting the commitrate. Must be larger than or equal to 1');
+     end if;
+     xCommitRate := pCommitRate;
+
+     EXCEPTION_BLOCK
+       STD_EXCEPTION_HANDLER;
+   END_PROCEDURE;
+
+   PROCEDURE(ForceCommit)
+   is
+   begin
+     commit;
+     xCommitCount := 0; -- afterwards in case the commit throws an exception.
+-- Transaction level should be reset to zero. 
+     EXCEPTION_BLOCK
+       STD_EXCEPTION_HANDLER;
+   END_PROCEDURE;
+
+/*****************************************************************************
+* Commit to be performed only when in nest level 1 (one).
+*****************************************************************************/
+   PROCEDURE(PerformCommit)
+   is
+   begin
+     xnrBizTrans := xnrBizTrans + 1; -- count the number of business transactions.
+
+     if (getTransactionLevel = 1) then
+        xCommitCount := xCommitCount + 1;
+        if (xCommitCount >= xCommitRate) then
+      	ForceCommit;
+        end if;
+     end if;
+
+     EXCEPTION_BLOCK
+       STD_EXCEPTION_HANDLER;
+   END_PROCEDURE;
+
+   PROCEDURE(performRollback)(pName in varchar2)
+   is
+   begin
+     if (pName is null or pName = '') then 
+      	performRollback;
+     else
+         SYSTEMERROR(23,'performRollback(pName)');
+	      rollback to pName;
+-- Transaction level should be reset to the level of 
+-- the setSavepoint level.
+     end if;
+   EXCEPTION_BLOCK
+       when others then
+	-- Special handling of error situation
+	-- Cannot call rollback in such circumstances
+	-- unless one knows explicity what has happened.
+    	 raise;
+   END_PROCEDURE;
+
+   PROCEDURE(performRollback)
+   is
+   begin
+     xCommitCount := 0;
+     rollback;
+-- Transaction level should be reset to zero.
+-- One is not in a transaction anymore.
+     EXCEPTION_BLOCK
+       when others then
+	-- Special handling of error situation
+	-- Cannot call rollback in such circumstances
+	-- unless one knows explicity what has happened.
+    	 raise;
+   END_PROCEDURE;
+
+/*******************************************************************************
+* Transaction
+*******************************************************************************/
+  FUNCTION(getTransactionLevel) return number
+  is
+  begin
+    if (inTransaction = false) then
+      xNestLevel := 0;
+    elsif (xNestLevel = 0) then -- inTransaction = true in this case
+      xNestLevel := 1; -- should flag as error!!!
+    end if;
+    return xNestLevel;
+  END_FUNCTION;
+
+  PROCEDURE(startTransaction)
+  is
+  begin
+    if (getTransactionLevel = 0) then
+      select sysdate into xstartDate from dual;
+      xCommitCount := 0;
+      xnrBizTrans := 0;
+    end if;
+
+    incrNestLevel;
+
+    EXCEPTION_BLOCK
+       STD_EXCEPTION_HANDLER;
+  END_PROCEDURE;
+
+  PROCEDURE(endTransaction)
+  is
+  begin
+    decrNestLevel;
+    if (getTransactionLevel = 0) then
+      forceCommit;
+      select sysdate into xendDate from dual;
+    end if;
+
+    EXCEPTION_BLOCK
+       STD_EXCEPTION_HANDLER;
+  END_PROCEDURE;
+
+/*******************************************************************************
+* Support methods
+*******************************************************************************/
+  FUNCTION(getStartDate) return date
+  is
+  begin
+    return xstartDate;
+  END_FUNCTION;
+
+  FUNCTION(getEndDate) return date
+  is
+  begin
+    return xendDate;
+  END_FUNCTION;
+
+  FUNCTION(getNrBizTransaction)
+    return integer
+  is
+  begin
+    return xnrBizTrans;
+  END_FUNCTION;
+
+/*******************************************************************************
+* Set the name of the initializing method
+*******************************************************************************/
+   PROCEDURE(setMethodName)(pName in varchar2)
+   is
+   begin
+     if (getTransactionLevel = 0) then
+       if (pName is null or ltrim(rtrim(pName)) = '') then
+--         U SERERROR('Error occurred during initialization. pName is null');
+          xprocedureName := 'NA';
+       else
+          xprocedureName := pName;
+       end if;
+     end if;
+   EXCEPTION_BLOCK
+       STD_EXCEPTION_HANDLER;
+   END_PROCEDURE;
+
+/*******************************************************************************
+* 
+*******************************************************************************/
+   PROCEDURE(reset)
+   is
+   begin
+      xCommitRate := 1;  -- the number of business transactions pr commit
+      xCommitCount := 0; -- the number of business transactions processed since last commit
+      xNestLevel := 0;   -- the number of nested transaction levels
+      xstartDate := null;
+      xendDate := null;
+      xnrBizTrans := 0; -- the number of business transactions.
+      xprocedureName := null;
+   EXCEPTION_BLOCK
+       STD_EXCEPTION_HANDLER;
+   END_PROCEDURE;
+
+/*******************************************************************************
+* Constructor
+*******************************************************************************/
+begin
+   xinitialized  := false;
+
+   xCommitRate := 1;  -- the number of business transactions pr commit
+   xCommitCount := 0; -- the number of business transactions processed since last commit
+   xNestLevel := 0;   -- the number of nested transaction levels
+   xstartDate := null;
+   xendDate := null;
+   xnrBizTrans := 0; -- the number of business transactions.
+   xprocedureName := null;
+
+   xinitialized := true;
+EXCEPTION
+   STD_EXCEPTION_HANDLER;
+END_CREATE_PACKAGE_BODY;
+/***************
+Test script
+declare
+  procedure output(lStr varchar2)
+  is
+  begin
+  	   dbms_output.put_line(lStr);
+  end;
+  procedure checkIt(lStr varchar2)
+  is
+  begin
+  	   output(lStr||': Trans level = '||dbr.transactionhandling.getTransactionLevel);
+  end;
+begin
+  dbr.transactionhandling.startTransaction;
+  begin
+    checkIt('1');
+	dbr.transactionhandling.setsavepoint('a');
+	  update bsasc
+      set bsasc_id = 'K95045'
+	  	where bsasc_s = 621; 
+	checkIt('21');
+	output('Rolling back to savepoint');
+    dbr.transactionhandling.performrollback('a');
+    checkIt('31');
+	output('Rolling back');
+    dbr.transactionhandling.performrollback;
+    checkIt('41');
+     dbr.transactionhandling.performCommit;
+   exception
+     when others then
+	 	  output(SQLERRM);
+   end;
+   checkIt('51');
+   dbr.transactionhandling.endTransaction;
+   checkIt('61');
+   commit;
+   checkIt('71');
+end;
+***************/

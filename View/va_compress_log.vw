@@ -1,0 +1,25 @@
+DROP VIEW VA_COMPRESS_LOG;
+
+/* Formatted on 28.05.2015 06:41:27 (QP5 v5.256.13226.35510) */
+CREATE OR REPLACE FORCE VIEW VA_COMPRESS_LOG
+(
+   SDE_ID,
+   SERVER_ID,
+   DIRECT_CONNECT,
+   COMPRESS_START,
+   START_STATE_COUNT,
+   COMPRESS_END,
+   END_STATE_COUNT,
+   COMPRESS_STATUS
+)
+AS
+     SELECT "SDE_ID",
+            "SERVER_ID",
+            "DIRECT_CONNECT",
+            "COMPRESS_START",
+            "START_STATE_COUNT",
+            "COMPRESS_END",
+            "END_STATE_COUNT",
+            "COMPRESS_STATUS"
+       FROM compress_log
+   ORDER BY compress_start DESC;

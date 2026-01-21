@@ -1,0 +1,42 @@
+CREATE_TRIGGER(tarc_{trigger_name})
+before insert or update of procurement_st_id 
+   on {trigger_name}
+    for each row
+declare
+/*****************************************************************
+* Trigger Info
+* Author          : $Author:  $
+* Original Date   : $Date:  $
+* Last Modified   : $Modtime: $
+* Archive Name    : $Archive: $
+* Description     :  $
+* Revision History: $Revision: 1.1 $
+* Workfile        : $Workfile: $
+* Copyright       : Equinor ASA
+*****************************************************************
+* Description
+* lDiscriminatorValue - this is the current value held in the discriminator column
+* lDesiredValue - This is the required value to be accepted
+*****************************************************************
+* Log
+* Date   Description					 Done by
+*
+*****************************************************************/
+   lDiscriminatorValue varchar2(10);
+   lDesiredValue varchar2(50) := 'xxxx':  -- supply correct value here.
+begin
+   --------------------------------------------------------
+   -- 1) Adjust to correct table and discriminator column
+   -- 2) Also adjust the values (2) and (3) in the usererror statement.
+   --------------------------------------------------------
+   select (3)procurement_type into lDiscriminatorValue
+      from (2)procurement
+      where a.st_id = :new.procurement_st_id;
+
+   if ( lDiscriminatorValue is null or lDiscriminatorValue <> lDesiredValue ) then
+      USERERROR(30,'{trigger_name}','(2)procurement','(3)procurement_type',lDesiredValue)
+      --Table (1)procurement_exp violates Arc constraint on Table (2)procurement - discriminator column (3)procurement_type doesn't have value (4)'xxxx';
+   end if;
+EXCEPTION
+   THROW_EXCEPTION_HANDLER;
+END_TRIGGER;

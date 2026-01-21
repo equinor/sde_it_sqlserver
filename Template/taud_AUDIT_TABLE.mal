@@ -1,0 +1,67 @@
+CREATE_TRIGGER(taud_{table_name})
+  before insert or update
+  on {table_name}
+  for each row
+declare
+/*****************************************************************
+* Audit trigger
+*  Package Info
+*   Author          : $Author:  $
+*   Original Date   : $Date:  $
+*   Last Modified   : $Modtime: $
+*   Archive Name    : $Archive: $
+*   Description     : $Header:  $
+*   Revision History: $Revision: $
+*   Tag name        : $Name:  $
+*   Workfile        : $Workfile: $
+*   Copyright       : $Equinor ASA: $
+*****************************************************************
+* Description
+*  Maintains the create and update columns in the table.
+*
+* Could extend auditing by including 
+*  os-user (255 char) -  sys_context('userenv','os_user')
+*  os-host (128 char) -  sys_context('userenv','host')
+* Why? ths "user" is not always the actual user. Using "os-user" 
+* pinpoint the user who is logged in on the PC. This user may use
+* a common login user (e.g RBAC) thereby camouflaging their identify.
+*****************************************************************
+* Log
+* Date   Description                                     Done by
+* 170812 Illegal to alter "create" information once data JOTHOR
+*  has been entered.
+*****************************************************************/
+  DECLARE_VARIABLE;
+begin
+   ---------------------------------------------------------
+   -- https://www.oracletutorial.com/oracle-date-functions/
+   -- systimestamp - Return the System date and time that 
+   --   includes fractional seconds and time zone.
+   -- current_timestamp - Return the current date and time
+   --   with time zone in the Session time zone
+   ---------------------------------------------------------
+  if (inserting) then
+    :new.st_created_by   := user;
+    :new.st_created_date := sys_extract_utc(systimestamp);
+    :new.st_updated_by   := null;
+    :new.st_updated_date := null;
+  elsif (updating) then
+    if (:new.st_created_by is null or :new.st_created_by <> :old.st_created_by) then
+       USERERROR(19,'st_created_by','XUSER');
+    elsif (:new.st_created_date is null or :new.st_created_date <> :old.st_created_date) then
+       USERERROR(19,'st_created_date','XUSER');
+    elsif (:old.st_updated_date is null and :new.st_updated_date is null) then
+       null; -- ok, this handles the first time the row is updated.
+    elsif (:new.st_updated_date is null) then
+       USERERROR(11,'st_updated_date','XUSER');  -- must supply
+    elsif (:new.st_updated_date <> :old.st_updated_date) then
+       USERERROR(19,'st_updated_date','XUSER');
+    end if;
+
+    :new.st_updated_by := user;
+    :new.st_updated_date := sys_extract_utc(systimestamp);
+  end if;
+  
+  EXCEPTION_BLOCK
+     THROW_EXCEPTION_HANDLER;
+END_TRIGGER;

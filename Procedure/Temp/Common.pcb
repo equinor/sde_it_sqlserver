@@ -1,0 +1,128 @@
+CREATE_PACKAGE_BODY(Common)
+--authid current_user
+is
+/*****************************************************************
+* Package Info
+* Author          : $Author: JOTHOR $
+* Original Date   : $Date: 2006/08/08 13:00:25 $
+* Last Modified   : $Modtime: 20.12.05 15:26 $
+* Archive Name    : $Archive: /DB/Utility.pcb $
+* Description     : $Header: f:\private\repository/dbr/Procedure/Utility.pcb,v 2.12 2006/08/08 13:00:25 JOTHOR Exp $
+* Revision History: $Revision: 2.12 $
+* Workfile        : $Workfile: Utility.pcb $
+* Copyright info  : Copyright (c), Statoil ASA,Norway. $Date: 2006/08/08 13:00:25 $
+*****************************************************************
+* Description
+*  This is a support package. Just throw exceptions, do not rollback.
+*
+*****************************************************************
+* Log
+* Date  Description                                      Done by
+* 170306 Corrected appendToUniqueList to handle regexp   JOTHOR
+*  special characters.
+* 070606 Altered deleteEntity to present the correct     JOTHOR
+*  entity name should the timestamp be changed. Was
+*  previously hardcoded to casing_entity.
+*****************************************************************/
+  PACKAGE_VARIABLE($Revision: 2.12 $);
+
+/*****************************************************************
+* Pragma
+*****************************************************************/
+  bufferTooSmall exception;
+  pragma exception_init(bufferTooSmall, -6502);  
+
+/*****************************************************************
+* Constants
+*****************************************************************/
+  xActual constant varchar2(20) := 'ACTUAL';
+
+/*****************************************************************
+* Variable - initialize variables in the constructor.
+* xInitialized   indicates whether package is initialized or not
+* xSql   string used for executing sql immediately or in cursors.
+* xMetaChar metacharacters as recognized in regexp
+*****************************************************************/
+  type cur_type is ref cursor;
+
+  xInitialized boolean;
+  xSql varchar2(2000);
+  xMetaChar varchar2(20);
+
+  xMaxIteration integer;
+  xIteration integer;
+
+  xBufferOverflowStr varchar2(100) := 'Failed to append buffer overflow: ';
+
+  xDatabase varchar2(50) := 'NA';
+
+/*****************************************************************
+* Standard methods
+*****************************************************************/
+  STD_PACKAGE_METHOD;
+
+/*****************************************************************
+* Init : Initializes the package
+* Init is called by the constructor.
+*****************************************************************/
+  FUNCTION(isInitialized)
+    return boolean
+  is
+  begin
+    MCR_RETURN(xInitialized);
+  END_FUNCTION;
+
+  /***************************************************************
+  * Executes the statement
+  ***************************************************************/
+  PROCEDURE(executeStatement)(lStatement varchar2,lDryRun boolean default false)
+  is
+  begin
+     if (lStatement is null) then
+         USERERROR(11,'lStatement statement');
+     end if;
+
+	 if (lDryRun = true) then
+	   DEBUG('SQL: '||lStatement);
+	   return;
+     end if;
+
+DEBUG('SQL: '||lStatement);
+--     execute immediate lStatement;
+  EXCEPTION
+      THROW_EXCEPTION_HANDLER;
+  END_PROCEDURE; 
+
+  
+/*********************************************
+* The constructor
+*********************************************/
+begin
+  xInitialized := false;
+  xMetaChar := '^$.*+?\';
+
+  ---------------------------------------
+  -- For use with sorting,
+  ---------------------------------------
+  xInitialized := FALSE;
+  xMaxIteration := 2000;
+  USE_QSORT := 1;
+
+  ---------------------------------------
+  -- Identify the database
+  ---------------------------------------
+  xDatabase := FRAMEWORK_SCHEMA.Utility.getDatabaseName;
+
+  if (xDatabase != FRAMEWORK_SCHEMA.IT_Constant.xDBProd
+     and xDatabase != FRAMEWORK_SCHEMA.IT_Constant.xDBTest
+     and xDatabase != FRAMEWORK_SCHEMA.IT_Constant.xDBDev
+     ) 
+  then
+     USERERROR(20,'Failed to identify database: <'|| xDatabase ||'>');
+  end if;
+
+  -- Last statement to be executed
+  xInitialized := true;
+EXCEPTION
+  	STD_EXCEPTION_HANDLER;
+END_CREATE_PACKAGE_BODY;

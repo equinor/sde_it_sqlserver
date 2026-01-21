@@ -1,0 +1,34 @@
+CREATE_TRIGGER({triggerName})
+  before insert or update
+  ON {triggerTable}
+  for each row
+declare
+/*****************************************************************
+*  Package Info
+*   Author          : $Author: jothor $
+*   Original Date   : $Date: 2010/03/16 13:38:16 $
+*   Last Modified   : $Modtime: $
+*   Archive Name    : $Archive: $
+*   Description     : $Header: f:\private\repository/dbr/Jobs/AuditSdeTable/TriggerMaintainCreateUpdateInfo.mal,v 1.1 2010/03/16 13:38:16 jothor Exp $
+*   Revision History: $Revision: 1.1 $
+*   Tag name        : $Name:  $
+*   Workfile        : $Workfile: $
+*****************************************************************
+* Description
+*  Maintains the create and update columns in the table.
+*
+*****************************************************************/
+  STANDARD_VARIABLE;
+
+begin
+  if (inserting and user <> 'SDE') then
+    :new.st_row_create_user := user;
+    :new.st_row_create_date := sysdate;
+  elsif (updating and user <> 'SDE') then
+    :new.st_row_update_user := user;
+    :new.st_row_update_date := sysdate;
+  end if;
+  
+ EXCEPTION_BLOCK
+   THROW_EXCEPTION_HANDLER;
+END_TRIGGER;

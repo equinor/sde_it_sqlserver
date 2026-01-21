@@ -1,0 +1,590 @@
+divert(-1)
+define(L_CONSUME_EXCEPTION_HANDLER,<&> -- l_consume_exception_handler
+  when others then
+    if (SQLCODE not in (USERERROR_CODE,DBERROR_CODE,SYSTEMERROR_CODE)) then
+       SETSTATUS(SQLCODE);
+       if (ERRORTEXT is null) then
+         SET_ERRORTEXT(SQLERRM);
+       end if;
+    end if;
+    z_isLogged := false /*LO G(LEVEL_HIGH,SQLERRM)*/<%>)
+ 
+define(L_THROW_EXCEPTION_HANDLER,<&>-- l_throw_exception_handler
+    when others then
+       if (SQLCODE in (SYSTEMERROR_CODE,USERERROR_CODE,DBERROR_CODE)) then
+         raise;
+       end if;
+ 
+       SETSTATUS(SQLCODE);
+       SET_ERRORTEXT(SQLERRM);
+       z_isLogged:=false;
+       raise_application_error(SYSTEMERROR_CODE,z_errorText)<%>)
+ 
+define(L_STD_EXCEPTION_HANDLER,<&>-- l_std_exception_handler
+ when others then
+------------------------------------------------------------------
+-- IMPORTANT
+------------
+-- Rollback can only be performed when the method is in a 
+-- separate transaction as given by the pragma:  autonomous_transaction
+-- All other use is incorrect.
+------------------------------------------------------------------
+    rollback;
+ 
+    if (SQLCODE in (SYSTEMERROR_CODE,USERERROR_CODE,DBERROR_CODE)) then
+      if (z_isLogged=false and SQLCODE in (SYSTEMERROR_CODE,DBERROR_CODE)) then
+         z_isLogged:=false;
+/* Do not want to interact with database, shunting out logError call
+         z_isLogged := true;
+         FRAMEWORK_SCHEMA.errorhandler.logError(LEVEL_HIGH,'XL_LOGAPPNAME',z_body_version,SQLERRM);
+*/
+      end if;
+      raise;
+    end if;
+ 
+    -- Unknown exception.Log it and raise as a system error.
+    SETSTATUS(SQLCODE);
+    SET_ERRORTEXT(SQLERRM);
+    z_isLogged:=false;
+/* Do not want to interact with database, shunting out logError call
+    z_isLogged:=true;FRAMEWORK_SCHEMA.errorhandler.logError(LEVEL_HIGH,'XL_LOGAPPNAME',z_body_version,SQLERRM);
+*/
+    raise_application_error(SYSTEMERROR_CODE,z_errorText)<%>)
+ 
+define(L_RAISE_APPERROR,<&>SET_ERRORTEXT('XL_LOGAPPNAME:'||$2);
+   raise_application_error($1,z_errorText)<%>)
+divert
+ 
+CREATE_PACKAGE_BODY(ErrorHandler)
+is
+/*****************************************************************
+* Package Info
+* Author          : $Author: JOTHOR $
+* Original Date   : $Date: 2007/03/23 13:46:23 $
+* Last Modified   : $Modtime: 15.12.05 14:35 $
+* Archive Name    : $Archive: /DB/ErrorHandler.pcb $
+* Description     : $Header: f:\private\repository/dbr/Procedure/ErrorHandler.pcb,v 2.13 2007/03/23 13:46:23 JOTHOR Exp $
+* Revision History: $Revision: 2.13 $
+* Workfile        : $Workfile: ErrorHandler.pcb $
+* Copyright info  : Copyright (c), Statoil ASA,Norway. $Date: 2007/03/23 13:46:23 $
+*****************************************************************
+* Description
+*
+* NOTE: Do not use usererrror,dberror or systemerror. Use e.g
+*  raise_application_error(USERERROR_CODE,'my text explaining the situation');
+* This because interaction with the database may be faulty, and
+* database interaction should be kept to a minimum.
+*
+* It is vital that no expections are propagated when logging or debugging
+* from this package.
+*
+* Delimiters.
+* Please do not use delimiters which are the same as used in regular 
+* expressions (e.g {,},$,^ etc
+*****************************************************************
+* Log
+* Date  Description                                      Done by
+* 220206 Added mcr_return(null) after consume_exception  JOTHOR
+*  handler for functions. The function does not in raise an
+*  exception, so the caller does execpt a return value.
+* 030706 Increased length of type refParam to 2000.      JOTHOR
+* 040706 Altered to local definition L_CONSUME/L_STD and JOTHOR
+*  L_THROW exception handler.
+*  Altered start/end delimiters.
+*****************************************************************/
+  PACKAGE_VARIABLE($Revision: 2.13 $);
+  STATEFUL;
+
+  ex_bufferLengthExceeded exception; 
+  PRAGMA EXCEPTION_INIT(ex_bufferLengthExceeded, -6502); 
+ 
+/*****************************************************************
+* Variable
+* xInitialized   indicates whether package is initialized or not
+*****************************************************************/
+  type refParam is table of varchar2(2000);
+ 
+  xParamList refParam;
+ 
+  xInitialized boolean;
+  xLevel integer;
+  xMaxNrParam integer;
+  xStartDelimiter varchar2(10);
+  xEndDelimiter varchar2(10);
+  xApplication FRAMEWORK_SCHEMA.t_basis_clientmessage.application%type;
+  xMaxMessageLength integer;
+  xWarning FRAMEWORK_SCHEMA.t_basis_clientmessage.messagetext%type;
+  xStandardNoMessage FRAMEWORK_SCHEMA.t_basis_clientmessage.messagetext%type;
+  xStandardTooLong FRAMEWORK_SCHEMA.t_basis_clientmessage.messagetext%type;
+ 
+/*****************************************************************
+* Standard methods
+*****************************************************************/
+  STD_PACKAGE_METHOD;
+ 
+/*****************************************************************
+* Init : Initializes the package
+*****************************************************************/
+  FUNCTION(isInitialized)
+    return boolean
+  is
+  begin
+    MCR_RETURN(xInitialized);
+  END_FUNCTION;
+ 
+/*****************************************************************
+* Internal methods to the package
+*****************************************************************/
+  FUNCTION(getMaxMessageLength)
+    return integer
+  is
+  begin
+    if (xMaxMessageLength is null) then
+      select nvl(CHAR_LENGTH,255)
+       into xMaxMessageLength
+       from user_tab_columns
+       where table_name = 'T_BASIS_CLIENTERRORLOG' 
+       and column_name = 'MESSAGETEXT';
+ 
+      if (xMaxMessageLength > 4000) then
+       xMaxMessageLength := 4000;
+      end if;
+    end if;
+ 
+    MCR_RETURN(xMaxMessageLength);
+  EXCEPTION_BLOCK
+    L_THROW_EXCEPTION_HANDLER;
+  END_FUNCTION;
+ 
+  FUNCTION(getDBMessage)(lId varchar2)
+    return varchar2
+  is
+    cursor cur_message(lId varchar2)
+      is select messagetext
+        from FRAMEWORK_SCHEMA.t_basis_clientmessage
+        where messagecode = lId
+         and application = xApplication;
+    lStr varchar2(4000);
+    lFound boolean := true;
+  begin
+    OPEN_CURSOR(cur_message)(lId);
+    fetch cur_message into lStr;
+    if (cur_message%rowcount = 1) then
+       lFound := true;
+    end if;
+    CLOSE_CURSOR(cur_message);
+ 
+    if (lFound = false) then
+       L_RAISE_APPERROR(USERERROR_CODE,'Failed to find message <'||lId||'>');
+    end if;
+    return lStr;
+  EXCEPTION_BLOCK
+     L_THROW_EXCEPTION_HANDLER;
+  END_PROCEDURE;
+ 
+  FUNCTION(getTooLongMessage_ErrText)(lId varchar2)
+    return varchar2
+  is
+      lStr varchar2(4000);
+  begin
+     lStr := xStandardTooLong || '. Max length <'|| getMaxMessageLength|| '>. Message nr <'||lId||'>';
+     lStr := substr(lStr,1,getMaxMessageLength);
+     MCR_RETURN(lStr);
+  EXCEPTION_BLOCK
+     L_THROW_EXCEPTION_HANDLER;
+  END_PROCEDURE;
+  
+ 
+  /***********************************************************************
+  * Substitutes all occurences of lPattern with lSub within the string
+  * lMessage.
+  * lCount is a precautionary step to avoid infinite replacements.
+  * Return
+  *   true if one or more occurrences of lPattern
+  *   false if no occurrences of lPattern
+  ***********************************************************************/
+  FUNCTION(substitute)(lMessage in out varchar2,lPattern varchar2,lSub varchar2)
+    return boolean
+  is
+    lStatus boolean := false;
+    lCount integer := 0;
+    lPos integer := 0;
+  begin
+
+    lStatus := regexp_like(lMessage,lPattern,'i');
+    if (lStatus = true) then
+      if (lSub is null) then
+        z_errorText :=  substr('substitute: ' || 'ErrorHandler.substitute:'||'Incomming substitution value is null <'||lPattern||'X'||lMessage||'>',1,255);
+   raise_application_error(-20003,z_errorText);
+      end if;
+
+      while (regexp_like(lMessage,lPattern,'i') = true and lCount < 20)
+      loop
+         lCount := lCount +1;
+         lMessage := regexp_replace (lMessage, lPattern, lSub, 1, 1, 'i');
+      end loop;
+    end if;
+
+/* valid for prior oracle 10 
+    lPos := instr(lMessage,lPattern,1,1);
+    if (lPos > 0) then
+      if (lSub is null) then
+        z_errorText :=  substr('substitute: ' || 'ErrorHandler.substitute:'||'Incomming substitution value is null <'||lPattern||'X'||lMessage||'>',1,255);
+   raise_application_error(-20003,z_errorText);
+      end if;
+      lStatus := true;
+      lMessage := replace(lMessage,lPattern,lSub);
+--      dbms_output.put_line(lMessage);
+    end if;
+*/ 
+    MCR_RETURN(lStatus);
+  EXCEPTION_BLOCK
+      L_THROW_EXCEPTION_HANDLER;
+  END_FUNCTION;
+ 
+  FUNCTION(constructMessage)(lId varchar2,lPara1 varchar2 default null,lPara2 varchar2 default null,lPara3 varchar2 default null,lPara4 varchar2 default null,lPara5 varchar2 default null)
+    return varchar2
+  is
+    lMessage varchar2(4000);
+    lPattern varchar2(100); -- length of start delimiter + end delimiter + count
+    lSub varchar2(4000);
+  begin
+   lMessage := getDBMessage(lId);
+ 
+   if (xParamList.count > 0) then
+   begin
+      for i in 1..xParamList.count
+      loop
+        lPattern := xStartDelimiter||i||xEndDelimiter;
+        if (substitute(lMessage,lPattern,xParamList(i)) = false) then
+          exit;
+        end if;
+      end loop;
+ 
+      xParamList.delete;
+   exception
+      when others then
+         xParamList.delete;
+         raise;
+   end;
+   else
+      for i in 1..xMaxNrParam
+      loop
+       lPattern := xStartDelimiter||i||xEndDelimiter;
+ 
+       case
+         when i = 1 then lSub := lPara1;
+         when i = 2 then lSub := lPara2;
+         when i = 3 then lSub := lPara3;
+         when i = 4 then lSub := lPara4;
+         when i = 5 then lSub := lPara5;
+         else
+            L_RAISE_APPERROR(SYSTEMERROR_CODE,'Exceeding limit of parameters: '||xMaxNrParam);
+       end case;
+ 
+        if (substitute(lMessage,lPattern,lSub) = false) then
+          exit;
+        end if;
+     end loop;
+   end if;
+ 
+   MCR_RETURN(lMessage);
+  EXCEPTION_BLOCK
+      L_THROW_EXCEPTION_HANDLER;
+  END_FUNCTION;
+ 
+  PROCEDURE(updateMessage)(lApplication varchar2,lId varchar2,lMessage varchar2,lDescription varchar2)
+  is
+  begin
+     update FRAMEWORK_SCHEMA.t_basis_clientmessage
+        set messagetext = lMessage
+        where messagecode = lId
+        and application = lApplication;
+  EXCEPTION_BLOCK
+     L_THROW_EXCEPTION_HANDLER;
+  END_PROCEDURE;
+ 
+  PROCEDURE(insertMessage)(lApplication varchar2,lId in out varchar2,lMessage varchar2,lDescription varchar2)
+  is
+  begin
+     if (lMessage is null) then
+        L_RAISE_APPERROR(USERERROR_CODE,'Message text is null');
+     end if;
+     if (lApplication is null) then
+        L_RAISE_APPERROR(USERERROR_CODE,'The name of the application is null');
+     end if;
+ 
+     --------------------------------------------
+     -- Get the next number in sequence
+     --------------------------------------------
+     if (lId is null) then
+       select nvl(max(to_number(messagecode)),0) + 1
+           into lId
+         from FRAMEWORK_SCHEMA.t_basis_clientmessage
+         where application = lApplication;
+     end if;
+ 
+
+     insert into FRAMEWORK_SCHEMA.t_basis_clientmessage(
+       messagecode
+      ,messagetext
+      ,application
+      ,description
+      )
+      values(
+       lId
+      ,lMessage
+      ,lApplication
+      ,lDescription
+      );
+  EXCEPTION_BLOCK
+    L_THROW_EXCEPTION_HANDLER;
+  END_PROCEDURE;
+ 
+/*****************************************************************
+* Locked to schema owner.
+* addMessage inserts a new message.
+* setMessage will insert a new message, update an existing message
+*****************************************************************/
+  FUNCTION(addMessage)(lId varchar2,lMessage varchar2,lDescription varchar2 default null)
+      return varchar2
+  is
+   PRAGMA AUTONOMOUS_TRANSACTION;
+   lMyId FRAMEWORK_SCHEMA.t_basis_clientmessage.messagecode%type;
+  begin
+    lMyId := lId;
+
+    insertMessage(xApplication,lMyId,lMessage,lDescription);
+
+    commit;
+    MCR_RETURN(lMyId);
+  EXCEPTION_BLOCK
+    L_STD_EXCEPTION_HANDLER;
+  END_FUNCTION;
+ 
+  FUNCTION(setMessage)(lId varchar2,lMessage varchar2,lDescription varchar2 default null)
+      return varchar2
+  is
+   PRAGMA AUTONOMOUS_TRANSACTION;
+   cursor cur_message(lId integer)
+      is select count(*)
+         from FRAMEWORK_SCHEMA.t_basis_clientmessage
+         where messagecode = lId
+         and application = xApplication;
+   lCount integer;
+   lMyId FRAMEWORK_SCHEMA.t_basis_clientmessage.messagecode%type;
+  begin
+     if (lId is null) then
+       L_RAISE_APPERROR(USERERROR_CODE,'The message id is null');
+     end if;
+ 
+     OPEN_CURSOR(cur_message)(lId);
+     fetch cur_message into lCount;
+     CLOSE_CURSOR(cur_message);
+ 
+     lMyId := lId;
+     if (lCount = 0) then
+       insertMessage(xApplication,lMyId,lMessage,lDescription);
+     else
+       updateMessage(xApplication,lMyId,lMessage,lDescription);
+     end if;
+
+     commit;
+ 
+     MCR_RETURN(lMyId);
+  EXCEPTION_BLOCK
+    L_STD_EXCEPTION_HANDLER;
+  END_FUNCTION;
+ 
+/*****************************************************************
+* Public methods.
+*****************************************************************/
+  PROCEDURE(addParam)(lParam varchar2)
+  is
+  begin
+    xParamList.extend(1);
+    xParamList(xParamList.last) := lParam;
+  EXCEPTION_BLOCK
+    L_CONSUME_EXCEPTION_HANDLER;
+  END_PROCEDURE;
+ 
+  FUNCTION(getMessage)(lId varchar2,lPara1 varchar2 default null,lPara2 varchar2 default null,lPara3 varchar2 default null,lPara4 varchar2 default null,lPara5 varchar2 default null)
+    return varchar2
+  is
+     lStr varchar2(4000);
+  begin
+     begin
+       lStr := constructMessage(lId,lPara1,lPara2,lPara3,lPara4,lPara5);
+     exception
+         when ex_bufferLengthExceeded then
+            lStr := getTooLongMessage_ErrText(lId);
+     end;
+ 
+     MCR_RETURN(lStr);
+  EXCEPTION_BLOCK
+   L_CONSUME_EXCEPTION_HANDLER;
+     MCR_RETURN(xStandardNoMessage||'. Message nr <'||lId||'>');
+  END_FUNCTION;
+ 
+  /*********************************************************************
+  * Log errors of level high regardless of setting.
+  *********************************************************************/
+  PROCEDURE(logError)(lLevel integer,lApplication varchar2,lVersion varchar2,lMessage varchar2,lHost varchar2 default 'NA')
+  is
+   PRAGMA AUTONOMOUS_TRANSACTION;
+   lStr FRAMEWORK_SCHEMA.t_basis_clienterrorlog.messagetext%type;
+   lVer FRAMEWORK_SCHEMA.t_basis_clienterrorlog.applicationversion%type;
+  begin
+    if (lLevel != FRAMEWORK_SCHEMA.errorhandler.level_high and lLevel > xLevel) then
+       MCR_RETURN;
+    end if;
+ 
+    if (lMessage is null) then
+      lStr := 'N/A';
+    elsif (length(lMessage) > getMaxMessageLength) then
+      lStr := substr(lMessage,1,getMaxMessageLength);
+    else
+      lStr := lMessage;
+    end if;
+ 
+    if (lVersion is null) then
+      lVer := 'N/A';
+    else
+      lVer := lVersion;
+    end if;
+ 
+    insert into FRAMEWORK_SCHEMA.t_basis_clienterrorlog(
+      applicationname
+     ,applicationversion
+     ,userregistered
+     ,messagecode
+     ,messagetext
+	 ,host
+     )
+     values (
+      lApplication
+     ,lVer
+     ,user
+     ,lLevel
+     ,lStr
+	 ,lHost
+     );
+ 
+    commit;
+  EXCEPTION_BLOCK
+     L_STD_EXCEPTION_HANDLER;
+  END_PROCEDURE;
+ 
+  PROCEDURE(setLevel)(lLevel integer)
+  is
+  begin
+   if (lLevel < logging_off) then
+      xLevel := logging_off;
+   else
+     xLevel := lLevel;
+   end if;
+  EXCEPTION_BLOCK
+    L_CONSUME_EXCEPTION_HANDLER;
+  END_PROCEDURE;
+ 
+  FUNCTION(getLevel)
+    return integer
+  is
+  begin
+   return xLevel;
+  EXCEPTION_BLOCK
+    L_CONSUME_EXCEPTION_HANDLER;
+  END_FUNCTION;
+ 
+  /*********************************************
+  * These are for setting/getting warnings
+  * Only one warning is present
+  * It is possible to append to an existing warning
+  *********************************************/
+  FUNCTION(getWarning)
+    return varchar2
+  is
+  begin
+      MCR_RETURN(xWarning);
+  EXCEPTION_BLOCK
+     L_CONSUME_EXCEPTION_HANDLER;
+     MCR_RETURN(xStandardNoMessage);
+  END_FUNCTION;
+ 
+  PROCEDURE(setWarning)(lMessage varchar2 default null)
+  is
+  begin
+      xWarning := lMessage;
+  EXCEPTION_BLOCK
+     L_CONSUME_EXCEPTION_HANDLER;
+  END_PROCEDURE;
+ 
+  PROCEDURE(appendWarning)(lMessage varchar2)
+  is
+    lLength integer;
+    lWarnLength integer;
+  begin
+     lWarnLength := nvl(length(xWarning),0);
+     lLength := nvl(length(lMessage),0) + lWarnLength;
+ 
+     if (lWarnlength >= getMaxMessageLength) then
+         null;
+     elsif (lLength > getMaxMessageLength) then
+         xWarning := xWarning || substr(lMessage,1,getMaxMessageLength-lWarnLength);
+     else
+         xWarning := xWarning || lMessage;
+     end if;
+  EXCEPTION_BLOCK
+     L_CONSUME_EXCEPTION_HANDLER;
+  END_PROCEDURE;
+ 
+/*********************************************
+* Debugging methods
+*********************************************/
+  PROCEDURE(debug)(lLevel integer,lMessage varchar2)
+  is
+    lStr varchar2(4000);
+    lLen integer := 254;
+  begin
+    if (lLevel > xLevel) then
+       MCR_RETURN;
+    end if;
+
+    if (lMessage is null or length(lMessage) = 0) then
+       MCR_RETURN;
+    end if;
+
+    lStr := substr(lMessage,1,4000);
+ 
+    -----------------------------------------------------------------
+    -- When printing to standard output, the max line length is 255.
+    -- If the message exceeds this length, it must be split and written
+    -- over several lines.
+    -----------------------------------------------------------------
+    for i in 1..ceil(length(lStr)/lLen)
+    loop
+      dbms_output.put_line(substr(lStr,(i-1)*lLen + 1, lLen ));
+    end loop;
+  EXCEPTION_BLOCK
+    L_CONSUME_EXCEPTION_HANDLER;
+  END_PROCEDURE;
+ 
+/*********************************************
+* The constructor
+*********************************************/
+begin
+  xLevel := errorhandler.level_high;
+  xMaxNrParam := 5;
+  xParamList := refParam();
+  xApplication := 'GLOBAL';
+  xStartDelimiter := '<=>';
+  xEndDelimiter := '<@>';
+  xMaxMessageLength := null;
+  xStandardNoMessage := 'Failed to retrieve or construct text message from persistent datastore';
+  xStandardTooLong := 'The message constructed exceeds max length';
+ 
+  xInitialized := true;
+EXCEPTION
+   L_CONSUME_EXCEPTION_HANDLER;
+END_CREATE_PACKAGE_BODY;
+

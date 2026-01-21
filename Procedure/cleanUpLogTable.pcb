@@ -1,0 +1,132 @@
+CREATE_PROCEDURE(SCHEMA.cleanUpLogTable)
+/*****************************************************************
+* Package Info
+* Author          : $Author: JOTHOR $
+* Original Date   : $Date: 2016/08/16 13:20:13 $
+* Last Modified   : $Modtime: $
+* Archive Name    : $Archive: $
+* Description     : $Header:  JOTHOR Exp $
+* Revision History: $Revision: 2.3 $
+* Workfile        : $Workfile: $
+* Copyright info  : Copyright (c), Statoil ASA,Norway. $Date: 2016/08/16 13:20:13 $
+*****************************************************************
+* Description
+* Relates to registered tables in cleanUpTableInfo. 
+* 
+*****************************************************************
+* Log
+* Date  Description                                         Done by
+* 250919 Up'ed process_information_history to 366 days      JOTHOR
+* 100622 Relates to registered tables in cleanUpTableInfo.  JOTHOR
+* 200126 Started job upgrading to sqlserver                 JOTHOR
+*****************************************************************/
+as
+begin 
+ STANDARD_VARIABLE;
+
+/*****************************************************
+* @lDays   the number of days to start deletion from
+* @Deletion_lDate   calculated date from which everything older
+*   shall be delete
+* lStartDate the time this proc started
+* @lEndDate the time this proc ended
+* @lCount  counter.
+* @lErrText error text
+* @lMessage message text
+* @lErrCount the number of errors encountered
+*****************************************************/  
+begin
+  cursor cur_data is
+   select *
+      from cleanUpTableInfo
+      order by appname,tabname;
+      
+  declare @@lSql nvarchar(1000)
+     ,@lDays integer := 0;
+     ,@Deletion_lDate date := null;
+     ,@lStartDate date;
+     ,@lEndDate date;
+     ,@lCount integer := 0;
+     ,@lTabCount integer := 0;
+     ,@lErrText nvarchar(1000);
+     ,@lMessage nvarchar(300);
+     ,@lErrCount integer := 0;
+
+  /********************************************
+  * Cleanup Block 1:
+  * Calculate the date to delete from
+  * List of all the actions/tables to be cleaned.
+  * To be kept in own block
+  * Register the occasion in the batch status
+  * table.
+  * The getstatus refers to the cleanup block. The
+  * consume_exception_handler set the status flag,
+  * should an error have occurred.
+  ********************************************/
+BEGIN_EXCEPTION  
+  for i in cur_data
+  loop
+    SETSTATUS(0);
+    if (i.isactive = 0) then
+      LOG(LEVEL_INFO,'Cleanup of table "'||i.tabname||'" is set to inactive.');
+      continue;
+    end if;
+    
+    select @lTabCount = count(*) from user_tables where table_name = upper(i.tabname);
+    if (@lTabCount = 0) then
+      set @lErrCount := lErrCount + 1;
+      set @lSql := 'update cleanUpTableInfo'
+             ||' set isactive=0'
+             ||'    ,message=''Table >'||i.tabname||'< does not exist. Setting to inactive.'''
+             ||' where tabname = '''||i.tabname||'''';
+      BEGIN_EXCEPTION
+        execute immediate @lSql;
+        commit;
+      EXCEPTION
+         CONSUME_EXCEPTION_HANDLER;
+      END_EXCEPTION;
+      
+      LOG(LEVEL_INFO,'Table '||i.tabname||' does not exist.');
+      continue;
+    end if;
+    
+    set @lDays := i.days;
+    select @Deletion_lDate = sysdate - @lDays from dual;
+    select @lStartDate = sysdate from dual;
+    @lCount := 0;
+    BEGIN_EXCEPTION
+      @lSql := 'delete from '||i.tabname
+             ||' where '||i.synccolumn||' < (sysdate - '||i.days||')';
+      execute immediate @lSql;
+      set @lCount := @lCount + GETROWCOUNT;
+      DEBUG('Deleted '||@lCount||' rows exceeding nr days = '||i.days||'. Sql='||@lSql);
+      COMMIT;
+    EXCEPTION
+      CONSUME_EXCEPTION_HANDLER;
+    END_EXCEPTION;
+
+    select @lEndDate = sysdate from dual;
+
+    if (GETSTATUS = 0) then
+      set @lErrCount := 0;
+      set @lMessage := 'Removed rows older than '|| to_char(@Deletion_lDate,'DD.MM.YYYY') || ' in log table= ' || i.tabname;
+    else
+      set @lErrCount := 1;
+      set @lMessage := ERRORTEXT;
+    end if;
+
+   SF_UpdateBatchStatus('cleanUpTableInfo.'||i.tabname
+	  ,lStartDate
+     ,@lEndDate
+	  ,lErrCount
+	  ,@lCount
+	  ,lMessage
+	  );
+   DEBUG('SF_UpdateBatchStatus registered');
+  end loop;
+
+EXCEPTION
+ STD_EXCEPTION_HANDLER;
+END_EXCEPTION;  
+END_PROCEDURE;
+

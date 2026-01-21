@@ -1,0 +1,1197 @@
+CREATE_PACKAGE_BODY(Manage_mail)
+IS
+/*****************************************************************
+*  Package Info
+*   Author          : $Author: JOTHOR $
+*   Original Date   : $Date: 2004/11/11 10:28:32 $
+*   Last Modified   : $Modtime: $
+*   Archive Name    : $Archive: $
+*   Description     : $Header: F:/Private/Repository/dbr/Procedure/Manage_mail.pcb,v 1.3 2004/11/11 10:28:32 JOTHOR Exp $
+*   Revision History: $Revision: 1.3 $
+*   Workfile        : $Workfile: $
+*****************************************************************
+* Description
+* 
+* Uses the table r_table_def
+* table_name = 'SMTP_MAIL'  -- constant
+* table_kind = 'MAILSERVER'  -- constant
+* column_name  -- choose between the following
+*  SMTP_SERVER_OUT  - the mail server out bound.
+*  SMTP_PORT_OUT - the port outbound, the normal value is 25
+*  SMTP_DOMAIN -- the domain used e.g. "statoil.com"
+* valid_value = '' -- the actual value is to reside here
+* value_description   -- intended use of the attribute
+*****************************************************************
+* Log
+* Date	Description					Done by
+*
+*****************************************************************/
+
+/*****************************************************************
+* Variable
+*  conn      mail server connection
+*  mimeType  primary mime  type
+*  currentMimeType  current mime  type used with a segment e.g attach_text
+*  session   indicates whether session has started or not
+*  mailSession indicates whether mail_in_session has started or not
+*  lastAttachment indicates whether last attachment set or not
+*  inAttachment whether in an attachment or not
+*  lastAttachmentSet whether last attachment added or not prior to closing attachment block
+*  attachmentCount the total number of attachments in email
+*  attachmentInlineCount the number of inline attachments in email
+*  attachmentAttachmentCount the number of real attachments in email
+*  appendAttachInfo whether or not to append attachment details at the 
+*	end of the mail.
+*  xConnected  indicates whether connected or not
+*  xDataOpen  indicates whether data open or not (open_data/close_data)
+*****************************************************************/
+  PACKAGE_VARIABLE($Revision: 1.3 $);
+
+  xInitialized boolean := FALSE;
+  xConn      utl_smtp.connection := null;
+  xConnected boolean := false;
+  xDataOpen boolean := false;
+  mimeType  varchar2(256);
+  currentMimeType  varchar2(256);
+  mailSession boolean := false;
+  session boolean := false;
+  multiMimeType boolean := false;
+  inAttachment boolean := false;
+  lastAttachment boolean := false;
+  attachmentCount integer := 0;
+  attachmentInLineCount integer := 0;
+  attachmentAttachmentCount integer := 0;
+  appendAttachmentInfo boolean := false;
+  x_debugLevel pls_integer := 0;
+
+  xtablename             CONSTANT VARCHAR2 (40)  := 'SMTP_MAIL';
+  xtablekind             CONSTANT VARCHAR2 (40)  := 'MAILSERVER';
+
+  -- Customize the SMTP host, port and your domain name below.
+  smtp_host   VARCHAR2(256);
+  smtp_port   PLS_INTEGER;
+  smtp_domain VARCHAR2(256);
+  
+
+  -- A unique string that demarcates boundaries of parts in a multi-part email
+  -- The string should not appear inside the body of any part of the email.
+  -- Customize this if needed or generate this randomly dynamically.
+  BOUNDARY        CONSTANT VARCHAR2(256) := '-----7D81B75CCC90D2974F7A1CBD';
+
+  -- A MIME type that denotes multi-part email (MIME) messages.
+  INTERNAL_MULTIPART_MIME_TYPE CONSTANT VARCHAR2(256) := 'multipart/mixed; boundary="'||
+                                                  BOUNDARY || '"';
+  FIRST_BOUNDARY  CONSTANT VARCHAR2(256) := '--' || BOUNDARY || utl_tcp.CRLF;
+  LAST_BOUNDARY   CONSTANT VARCHAR2(256) := '--' || BOUNDARY || '--' ||
+                                              utl_tcp.CRLF;
+  MAX_BASE64_LINE_WIDTH CONSTANT PLS_INTEGER   := 76 / 4 * 3;
+
+/*****************************************************************
+* Standard methods
+*****************************************************************/
+  STD_PACKAGE_METHOD;
+
+/*****************************************************************
+* Debugging methods
+*****************************************************************/
+   PROCEDURE(Output)(pText varchar2)
+   is
+   begin
+	dbms_output.put_line(pText);
+   END_PROCEDURE;
+
+   -- returns the current debug level
+   FUNCTION(getDebugLevel)  return number
+   is
+   begin
+      MCR_RETURN(x_debugLevel);
+   END_FUNCTION;
+
+   -- A debug level = 0 implies no debug information will be output
+   -- Debug levels above 0 will allow various levels of debug information to be output
+   PROCEDURE(setDebugLevel)(pLevel number)
+   is
+   begin
+     if (pLevel < 0 or pLevel > 10) then
+  	USERERROR('The debug level must be in the interval [1-10]');
+     end if;
+
+     x_debugLevel := pLevel;
+   END_PROCEDURE;
+
+   -- Output only at same level or lower.
+   PROCEDURE(Debug)(pLevel number,pText varchar2)
+   is
+   begin
+	if (getDebugLevel() > 0 and getDebugLevel() >= pLevel) then
+	  Output(pText);
+	end if;
+   END_PROCEDURE;
+
+/*****************************************************************
+* Sets up the smtp mail server configuration values.
+*****************************************************************/
+   PROCEDURE(initSMTPConfiguration)
+   is
+         CURSOR cur_default
+         IS
+            SELECT column_name, valid_value
+              FROM r_table_def
+             WHERE table_name = xtablename AND table_kind = xtablekind;
+      BEGIN
+         DEBUG_ENTER;
+
+         FOR ROW IN cur_default
+         LOOP
+            IF (ROW.column_name = 'SMTP_SERVER_OUT')
+            THEN
+               smtp_host:= ltrim(rtrim(ROW.valid_value));
+            ELSIF (ROW.column_name = 'SMTP_PORT_OUT')
+            THEN
+               smtp_port := ltrim(rtrim(ROW.valid_value));
+            ELSIF (ROW.column_name = 'SMTP_DOMAIN')
+            THEN
+               smtp_domain := ltrim(rtrim(ROW.valid_value));
+            ELSE
+               NULL;                     -- silently ingore unrecognized tags
+            END IF;
+         END LOOP;
+
+	if (smtp_host is null) then
+	  USERERROR('Smtp host is null');
+	elsif (smtp_port is null) then
+	  USERERROR('Smtp port is null');
+	elsif (smtp_domain is null) then
+	  USERERROR('Smtp domain is null');
+	end if;
+   EXCEPTION_BLOCK
+	STD_EXCEPTION_HANDLER;
+   END_PROCEDURE;
+
+/*****************************************************************
+* Handling of primary mime type.
+*****************************************************************/
+  FUNCTION(checkIsMultiMimeType)(lMimeType in varchar2)
+    return boolean
+  is
+  begin
+    DEBUG_ENTER;
+     if (lMimeType = INTERNAL_MULTIPART_MIME_TYPE) then
+	MCR_RETURN(TRUE);
+     else
+	MCR_RETURN(FALSE);
+     end if;
+  END_FUNCTION;
+
+  FUNCTION(getMimeType)
+    return varchar2
+  is
+  begin
+    DEBUG_ENTER;
+    MCR_RETURN(mimeType);
+  END_FUNCTION;
+
+  FUNCTION(isMultiMimeType)
+    return boolean
+  is
+  begin
+    DEBUG_ENTER;
+     MCR_RETURN(checkIsMultiMimeType(getMimeType));
+  END_FUNCTION;
+
+  PROCEDURE(setMimeType)(lMimeType in varchar2)
+  is
+  begin
+    DEBUG_ENTER;
+     if (lMimeType = Manage_mail.MULTIPART_MIME_TYPE) then
+	mimeType := INTERNAL_MULTIPART_MIME_TYPE;
+     else
+	mimeType := lMimeType;
+     end if;
+  END_PROCEDURE;
+
+/*****************************************************************
+* attachmentCount
+* Handles the counting of total number of attachments, number
+* of inline attachments and the number of real attachments
+*****************************************************************/
+  FUNCTION(getAttachmentAttachmentCount)
+    return integer
+  is
+  begin
+    DEBUG_ENTER;
+    MCR_RETURN(attachmentAttachmentCount);
+  END_FUNCTION;
+
+  FUNCTION(getAttachmentInlineCount)
+    return integer
+  is
+  begin
+    DEBUG_ENTER;
+    MCR_RETURN(attachmentInlineCount);
+  END_FUNCTION;
+
+  PROCEDURE(incrAttachmentCount)(inLine in boolean)
+  is
+  begin
+    DEBUG_ENTER;
+    attachmentCount := attachmentCount + 1;
+    if (inLine = TRUE) then
+	attachmentInlineCount := attachmentInlineCount +  1;
+    else
+	attachmentAttachmentCount := attachmentAttachmentCount + 1;
+    end if;
+  END_PROCEDURE;
+
+  FUNCTION(getAttachmentCount)
+    return integer
+  is
+  begin
+    DEBUG_ENTER;
+    MCR_RETURN(attachmentCount);
+  END_FUNCTION;
+
+  PROCEDURE(setAttachmentCount)(lAttachmentCount in integer)
+  is
+  begin
+    DEBUG_ENTER;
+    attachmentCount := lAttachmentCount;
+    if (attachmentCount = 0) then
+	attachmentInlineCount := 0;
+	attachmentAttachmentCount := 0;
+    end if;
+  END_PROCEDURE;
+
+/*****************************************************************
+* Attachment info
+*****************************************************************/
+  FUNCTION(getAttachmentInfo)
+	return boolean
+  IS
+  BEGIN
+    DEBUG_ENTER;
+    MCR_RETURN(appendAttachmentInfo);
+  END_FUNCTION;
+
+  PROCEDURE(setAttachmentInfo)(lAttachInfo in boolean)
+  IS
+  BEGIN
+    DEBUG_ENTER;
+    appendAttachmentInfo := lAttachInfo;
+  END_PROCEDURE;
+
+/*****************************************************************
+* Flags for setting last attachment status
+*****************************************************************/
+  FUNCTION(getLastAttachment)
+    return boolean
+  is
+  begin
+    DEBUG_ENTER;
+    MCR_RETURN(lastAttachment);
+  END_FUNCTION;
+
+  PROCEDURE(setLastAttachment)(lLastAttachment in boolean) 
+  is
+  begin
+    DEBUG_ENTER;
+    lastAttachment := lLastAttachment;
+  END_PROCEDURE;
+
+/*****************************************************************
+* Flags for setting in attachment status
+*****************************************************************/
+  FUNCTION(getInAttachment)
+    return boolean
+  is
+  begin
+    DEBUG_ENTER;
+    MCR_RETURN(inAttachment);
+  END_FUNCTION;
+
+  PROCEDURE(setInAttachment)(lInAttachment in boolean) 
+  is
+  begin
+    DEBUG_ENTER;
+    inAttachment := lInattachment;
+  END_PROCEDURE;
+
+/*****************************************************************
+* Current mime type is used in conjuction with attachments.
+*****************************************************************/
+  FUNCTION(getCurrentMimeType)
+    return varchar2
+  is
+  begin
+    DEBUG_ENTER;
+    MCR_RETURN(currentMimeType);
+  END_FUNCTION;
+
+  FUNCTION(isCurrentMultiMimeType)
+    return boolean
+  is
+  begin
+    DEBUG_ENTER;
+	MCR_RETURN(checkIsMultiMimeType(getCurrentMimeType));
+  END_FUNCTION;
+
+  PROCEDURE(setCurrentMimeType)(lMimeType in varchar2)
+  is
+  begin
+    DEBUG_ENTER;
+     if (lMimeType = Manage_mail.MULTIPART_MIME_TYPE) then
+	currentMimeType := INTERNAL_MULTIPART_MIME_TYPE;
+     else
+	currentMimeType := lMimeType;
+     end if;
+  END_PROCEDURE;
+
+/*****************************************************************
+* Data channel
+*****************************************************************/
+  FUNCTION(isDataOpen)
+    return boolean
+  is
+  begin
+    DEBUG_ENTER;
+    MCR_RETURN(xDataOpen);
+  END_FUNCTION;
+
+  PROCEDURE(closeData)
+  is
+  begin
+    DEBUG_ENTER;
+    if (xDataOpen = false) then
+      	USERERROR('Cannot close a channel which has not be opened');
+    end if;
+
+    utl_smtp.close_data(xConn);
+    xDataOpen := false;
+  END_PROCEDURE;
+
+  PROCEDURE(openData)
+  is
+  begin
+    DEBUG_ENTER;
+    if (xDataOpen = true) then
+      	USERERROR('Cannot reopen a channel before closing the previous channel');
+    end if;
+
+    utl_smtp.open_data(xConn);
+    xDataOpen := true;
+  END_PROCEDURE;
+
+/*****************************************************************
+* mail session
+*****************************************************************/
+  FUNCTION(getMailSession)
+    return boolean
+  is
+  begin
+    DEBUG_ENTER;
+    MCR_RETURN(mailSession);
+  END_FUNCTION;
+
+  PROCEDURE(resetMailSession)
+  is
+  begin
+    mailSession := false;
+    setMimeType(null);
+    setAttachmentCount(0);
+    setLastAttachment(FALSE);
+    setInAttachment(FALSE);
+    setCurrentMimeType(null);
+    setAttachmentInfo(FALSE);
+    if (isDataOpen = true) then
+       closeData;
+    end if;
+  END_PROCEDURE;
+
+-- Setting mail session will reset all values regardless
+  PROCEDURE(setMailSession)(lMailSession in boolean) 
+  is
+  begin
+    DEBUG_ENTER;
+    if (lMailSession = true and mailSession = true) then
+       USERERROR('Must close mail session prior to opening a new mail session');
+    end if;
+
+    resetMailSession; -- must be first since it sets mailSession:=false.
+    mailSession := lMailSession;
+  END_PROCEDURE;
+
+/*****************************************************************
+* Flags for setting session status
+*****************************************************************/
+  FUNCTION(getSession)
+    return boolean
+  is
+  begin
+    DEBUG_ENTER;
+    MCR_RETURN(session);
+  END_FUNCTION;
+
+  PROCEDURE(setSession)(lSession in boolean) 
+  is
+  begin
+    DEBUG_ENTER;
+     if (lSession = TRUE and getSession = TRUE) then
+  	USERERROR('Cannot start a new session before closing current mail session');
+     end if;
+
+    session := lSession;
+    setMailSession(false); -- initialize mail session
+  END_PROCEDURE;
+
+/*****************************************************************
+* connection
+* Close connection will forcefully close and ignore most exceptions.
+*   If not already connected, the exception utl_smtp.transient_error will
+*   be thrown by the utl_smtp package and consumed here.
+*****************************************************************/
+  FUNCTION(getConnection)
+      return utl_smtp.connection 
+  IS
+  begin
+    DEBUG_ENTER;
+     MCR_RETURN(xConn);
+  END_FUNCTION;
+
+  PROCEDURE(setConnection)(lConn in utl_smtp.connection)
+  is
+  begin
+    DEBUG_ENTER;
+    xConn := lConn;
+  END_PROCEDURE;
+
+  PROCEDURE(disconnect)
+  is
+  begin
+    DEBUG_ENTER;
+    if (isDataOpen = true) then
+       closeData;
+    end if;
+
+    begin
+       utl_smtp.quit(xConn);
+    EXCEPTION
+       WHEN utl_smtp.transient_error OR utl_smtp.permanent_error THEN
+          NULL; -- When the SMTP server is down or unavailable, we don't
+                 -- have a connection to the server. The quit call will
+                 -- raise an exception that we can ignore.
+    end;
+ 
+    setSession(FALSE);
+    DEBUG(1,'Leaving disconnect');
+  EXCEPTION_BLOCK
+     THROW_EXCEPTION_HANDLER;
+  END_PROCEDURE;
+
+  PROCEDURE(openConnection)
+  is
+	lConn utl_smtp.connection;
+  begin
+    DEBUG_ENTER;
+    debug(1,'host:port = <'||smtp_host||':'||smtp_port||'>');
+    lConn := utl_smtp.open_connection(smtp_host, smtp_port);
+    utl_smtp.helo(lConn, smtp_domain);
+    setConnection(lConn);
+    setSession(TRUE);
+  END_PROCEDURE;
+
+/*****************************************************************
+* An exception has occurred. This procedure will close down the mail
+* correctly
+*****************************************************************/
+  PROCEDURE(errorHandling)
+  IS
+  BEGIN
+    DEBUG_ENTER;
+    disconnect;
+  EXCEPTION_BLOCK
+     THROW_EXCEPTION_HANDLER;
+  END_PROCEDURE;
+
+/*****************************************************************
+* Init : Initializes the package
+*****************************************************************/
+  FUNCTION(isInitialized)
+    return boolean
+  is
+  begin
+    DEBUG_ENTER;
+    MCR_RETURN(xInitialized);
+  END_FUNCTION;
+
+  FUNCTION(init)
+    return boolean
+  is
+  begin
+    DEBUG_ENTER;
+    xInitialized := false;
+
+    -- This should always be executed regardless of whether initialized
+    -- or not. This to pick up new values for the smtp configuration.
+    initSMTPConfiguration; 
+
+    setSession(false);
+    
+    xInitialized := true;
+    MCR_RETURN(xInitialized);
+  END_FUNCTION;
+
+/*****************************************************************
+* Check whether one can write text or an attachment
+* Checks the primary mime type
+*****************************************************************/
+  FUNCTION(canWrite)
+      return boolean
+  IS
+  begin
+    DEBUG_ENTER;
+    MCR_RETURN(not (isMultiMimeType = TRUE and getInAttachment = FALSE));
+  END_FUNCTION;
+
+  FUNCTION(canAttach)
+      return boolean
+  IS
+  begin
+    DEBUG_ENTER;
+    MCR_RETURN(isMultiMimeType = TRUE);
+  END_FUNCTION;
+
+/*****************************************************************
+* Internal support method
+*****************************************************************/
+  -- Return the next email address in the list of email addresses, separated
+  -- by either a "," or a ";".  The format of mailbox may be in one of these:
+  --   someone@some-domain
+  --   "Someone at some domain" <someone@some-domain>
+  --   Someone at some domain <someone@some-domain>
+  FUNCTION get_address(addr_list IN OUT VARCHAR2) 
+    RETURN VARCHAR2 
+  IS
+    addr VARCHAR2(256);
+    i    pls_integer;
+
+    FUNCTION lookup_unquoted_char(str  IN VARCHAR2,
+				  chrs IN VARCHAR2) 
+      RETURN pls_integer 
+    IS
+      c            VARCHAR2(5);
+      i            pls_integer;
+      len          pls_integer;
+      inside_quote BOOLEAN;
+    BEGIN
+       inside_quote := false;
+       i := 1;
+       len := length(str);
+       WHILE (i <= len) LOOP
+	 c := substr(str, i, 1);
+
+	 IF (inside_quote) THEN
+	   IF (c = '"') THEN
+	     inside_quote := false;
+	   ELSIF (c = '\') THEN
+	     i := i + 1; -- Skip the quote character
+	   END IF;
+	   GOTO next_char;
+	 END IF;
+
+	 IF (c = '"') THEN
+	   inside_quote := true;
+	   GOTO next_char;
+	 END IF;
+
+	 IF (instr(chrs, c) >= 1) THEN
+	    RETURN i;
+	 END IF;
+
+	 <<next_char>>
+	 i := i + 1;
+       END LOOP;
+
+       RETURN 0;
+    END;
+  BEGIN
+    /********************************************
+    * Strip over superfluous spaces at the ends 
+    * and replace any newline and/or carriage returns.
+    ********************************************/
+    addr_list := ltrim(rtrim(addr_list));
+    addr_list := replace(addr_list,chr(13),'');
+    addr_list := replace(addr_list,chr(10),'');
+
+    i := lookup_unquoted_char(addr_list, ',;');
+    IF (i >= 1) THEN
+      addr      := substr(addr_list, 1, i - 1);
+      addr_list := substr(addr_list, i + 1);
+    ELSE
+      addr := addr_list;
+      addr_list := '';
+    END IF;
+
+    i := lookup_unquoted_char(addr, '<');
+    IF (i >= 1) THEN
+      addr := substr(addr, i + 1);
+      i := instr(addr, '>');
+      IF (i >= 1) THEN
+	addr := substr(addr, 1, i - 1);
+      END IF;
+    END IF;
+
+    RETURN addr;
+  END;
+
+/*****************************************************************
+* Write a MIME header
+*****************************************************************/
+  PROCEDURE(write_mime_header)(name  IN VARCHAR2,
+			      value IN VARCHAR2) 
+  IS
+  BEGIN
+    DEBUG_ENTER;
+    utl_smtp.write_data(xConn, name || ': ' || value || utl_tcp.CRLF);
+  END_PROCEDURE;
+
+/*****************************************************************
+* Write boundary handling
+*****************************************************************/
+  -- Mark a message-part boundary.  Set <last> to TRUE for the last boundary.
+  -- No further attachments should be added after setting last to TRUE
+  PROCEDURE(write_boundary)(last  IN BOOLEAN DEFAULT FALSE) 
+  IS
+  BEGIN
+    DEBUG_ENTER;
+    IF (last) THEN
+      utl_smtp.write_data(xConn, LAST_BOUNDARY);
+      setLastAttachment(TRUE);
+    ELSE
+      utl_smtp.write_data(xConn, FIRST_BOUNDARY);
+      setLastAttachment(FALSE);
+    END IF;
+  END_PROCEDURE;
+
+/*****************************************************************
+* Write handling
+*****************************************************************/
+  PROCEDURE(write_text)(message IN VARCHAR2) 
+  IS
+  BEGIN
+    DEBUG_ENTER;
+    if (canWrite = FALSE) then
+ 	USERERROR('Cannot use write_text with MULTIPART_MIME_TYPE');
+    end if;
+
+    utl_smtp.write_data(xConn,message);
+  EXCEPTION_BLOCK
+	when others then
+	    SETSTATUS(SQLCODE);
+	    if (ERRORTEXT is null) then
+	      SET_ERRORTEXT(SQLERRM);
+	    end if;
+	    errorHandling;
+	    raise;
+  END_PROCEDURE;
+
+  ------------------------------------------------------------------------
+  PROCEDURE(write_mb_text)(message IN VARCHAR2) IS
+  BEGIN
+    DEBUG_ENTER;
+    write_raw(utl_raw.cast_to_raw(message));
+  EXCEPTION_BLOCK
+	when others then
+	    SETSTATUS(SQLCODE);
+	    if (ERRORTEXT is null) then
+	      SET_ERRORTEXT(SQLERRM);
+	    end if;
+	    errorHandling;
+	    raise;
+  END_PROCEDURE;
+
+  ------------------------------------------------------------------------
+  PROCEDURE(write_raw)(message IN RAW) IS
+  BEGIN
+    DEBUG_ENTER;
+    if (canWrite = FALSE) then
+ 	USERERROR('Cannot use write_text with MULTIPART_MIME_TYPE');
+    end if;
+
+    utl_smtp.write_raw_data(xConn,message);
+  EXCEPTION_BLOCK
+	when others then
+	    SETSTATUS(SQLCODE);
+	    if (ERRORTEXT is null) then
+	      SET_ERRORTEXT(SQLERRM);
+	    end if;
+	    errorHandling;
+	    raise;
+  END_PROCEDURE;
+
+/*****************************************************************
+* Attachment handling
+*****************************************************************/
+/*****************************************************************
+* Demarkation methods for attachment
+*****************************************************************/
+  PROCEDURE(begin_attachment)(mime_type   IN VARCHAR2 DEFAULT MIME_TYPE_TEXTPLAIN,
+			     inline       IN BOOLEAN  DEFAULT TRUE,
+			     filename     IN VARCHAR2 DEFAULT NULL,
+			     transfer_enc IN VARCHAR2 DEFAULT NULL) 
+  IS
+  BEGIN
+    DEBUG_ENTER;
+-- Reinstate this if one can confirm attachments only
+-- are permitted within multitype mimes.
+-- Reinstated 070704 JOTHOR
+    if (canAttach = FALSE) then
+	USERERROR('Primary mime_type does not permit attachment');
+    end if;
+
+    if (getInAttachment = TRUE) then
+	USERERROR('Should close attachment prior to opening a new attachment');
+    end if;
+
+    -- Increment the attachmentCount
+    incrAttachmentCount(inline);
+    setCurrentMimeType(mime_type);
+
+    write_boundary;
+    write_mime_header('Content-Type', getCurrentMimeType);
+
+    IF (filename IS NOT NULL) THEN
+       IF (inline) THEN
+	  write_mime_header('Content-Disposition',
+	    'inline; filename="'||filename||'"');
+       ELSE
+	  write_mime_header('Content-Disposition',
+	    'attachment; filename="'||filename||'"');
+       END IF;
+    END IF;
+
+    IF (transfer_enc IS NOT NULL) THEN
+      write_mime_header('Content-Transfer-Encoding', transfer_enc);
+    END IF;
+
+    utl_smtp.write_data(xConn, utl_tcp.CRLF);
+    setInAttachment(TRUE);
+  EXCEPTION_BLOCK
+	when others then
+	    SETSTATUS(SQLCODE);
+	    if (ERRORTEXT is null) then
+	      SET_ERRORTEXT(SQLERRM);
+	    end if;
+	    errorHandling;
+	    raise;
+  END_PROCEDURE;
+
+  ------------------------------------------------------------------------
+  PROCEDURE(end_attachment)(last IN BOOLEAN DEFAULT FALSE) 
+  IS
+  BEGIN
+    DEBUG_ENTER;
+    if (getInAttachment = FALSE) then
+	USERERROR('No attachment open prior to closing attachment');
+    end if;
+
+    utl_smtp.write_data(xConn, utl_tcp.CRLF);
+    setInAttachment(FALSE);
+
+    IF (last) THEN
+      if (getAttachmentInfo = TRUE and getAttachmentCount > 0) then
+	newLine;
+	attach_text('Number of attachments : '|| getAttachmentAttachmentCount);
+      end if;
+
+      write_boundary(last);
+    END IF;
+
+  EXCEPTION_BLOCK
+	when others then
+	    SETSTATUS(SQLCODE);
+	    if (ERRORTEXT is null) then
+	      SET_ERRORTEXT(SQLERRM);
+	    end if;
+	    errorHandling;
+	    raise;
+  END_PROCEDURE;
+
+  PROCEDURE(attach_text)(data        IN VARCHAR2,
+			mime_type    IN VARCHAR2 DEFAULT MIME_TYPE_TEXTPLAIN,
+			inline       IN BOOLEAN  DEFAULT TRUE,
+			filename     IN VARCHAR2 DEFAULT NULL,
+		        last         IN BOOLEAN  DEFAULT FALSE) 
+  IS
+  BEGIN
+    DEBUG_ENTER;
+    begin_attachment(mime_type, inline, filename);
+    write_text(data);
+    end_attachment(last);
+  EXCEPTION_BLOCK
+	when others then
+	    SETSTATUS(SQLCODE);
+	    if (ERRORTEXT is null) then
+	      SET_ERRORTEXT(SQLERRM);
+	    end if;
+	    errorHandling;
+	    raise;
+  END_PROCEDURE;
+
+
+  ------------------------------------------------------------------------
+  -- Support method to dump raw data encode
+  PROCEDURE(write_encoded_raw_64)(data in raw)
+  is
+    i   PLS_INTEGER;
+    len PLS_INTEGER;
+  begin
+    -- Split the Base64-encoded attachment into multiple lines
+    i   := 1;
+    len := utl_raw.length(data);
+    WHILE (i < len) LOOP
+       IF (i + MAX_BASE64_LINE_WIDTH < len) THEN
+	 utl_smtp.write_raw_data(xConn,
+	    utl_encode.base64_encode(utl_raw.substr(data, i,
+	    MAX_BASE64_LINE_WIDTH)));
+       ELSE
+	 utl_smtp.write_raw_data(xConn,
+	   utl_encode.base64_encode(utl_raw.substr(data, i)));
+       END IF;
+       utl_smtp.write_data(xConn, utl_tcp.CRLF);
+       i := i + MAX_BASE64_LINE_WIDTH;
+    END LOOP;
+  END_PROCEDURE;
+
+  ------------------------------------------------------------------------
+  PROCEDURE(attach_base64_text)(data   IN VARCHAR2,
+			  mime_type    IN VARCHAR2 DEFAULT MIME_TYPE_APPLICATIONOCTET,
+			  inline       IN BOOLEAN  DEFAULT TRUE,
+			  filename     IN VARCHAR2 DEFAULT NULL,
+			  last         IN BOOLEAN  DEFAULT FALSE) 
+  IS
+  BEGIN
+    DEBUG_ENTER;
+    attach_base64(utl_raw.cast_to_raw(data),mime_type,inline,filename,last);
+  EXCEPTION_BLOCK
+	when others then
+	    SETSTATUS(SQLCODE);
+	    if (ERRORTEXT is null) then
+	      SET_ERRORTEXT(SQLERRM);
+	    end if;
+	    errorHandling;
+	    raise;
+  END_PROCEDURE;
+
+  PROCEDURE(attach_base64_text)(data   IN CLOB,
+			  mime_type    IN VARCHAR2 DEFAULT MIME_TYPE_APPLICATIONOCTET,
+			  inline       IN BOOLEAN  DEFAULT TRUE,
+			  filename     IN VARCHAR2 DEFAULT NULL,
+			  last         IN BOOLEAN  DEFAULT FALSE) 
+  IS
+    i   PLS_INTEGER;
+    len PLS_INTEGER;
+    blockSize PLS_INTEGER := 31000;
+  BEGIN
+    DEBUG_ENTER;
+    i   := 1;
+    len := dbms_lob.getlength(data);
+
+    begin_attachment(mime_type, inline, filename, 'base64');
+      while (i < len) loop
+         IF (i + blockSize < len) THEN
+  	   write_encoded_raw_64(utl_raw.cast_to_raw(substr(data, i,blockSize)));
+         ELSE
+	   write_encoded_raw_64(utl_raw.cast_to_raw(substr(data, i)));
+         END IF;
+	 i := i + blockSize;
+      end loop;
+    end_attachment(last);
+  EXCEPTION_BLOCK
+	when others then
+	    SETSTATUS(SQLCODE);
+	    if (ERRORTEXT is null) then
+	      SET_ERRORTEXT(SQLERRM);
+	    end if;
+	    errorHandling;
+	    raise;
+  END_PROCEDURE;
+
+  ------------------------------------------------------------------------
+  PROCEDURE(attach_base64)(data        IN RAW,
+			  mime_type    IN VARCHAR2 DEFAULT MIME_TYPE_APPLICATIONOCTET,
+			  inline       IN BOOLEAN  DEFAULT TRUE,
+			  filename     IN VARCHAR2 DEFAULT NULL,
+			  last         IN BOOLEAN  DEFAULT FALSE) 
+  IS
+  BEGIN
+    DEBUG_ENTER;
+    begin_attachment(mime_type, inline, filename, 'base64');
+
+    write_encoded_raw_64(data);
+/********** Remove the code when tested
+* Replaced by the support method write_encoded_raw_64
+    -- Split the Base64-encoded attachment into multiple lines
+    i   := 1;
+    len := utl_raw.length(data);
+    WHILE (i < len) LOOP
+       IF (i + MAX_BASE64_LINE_WIDTH < len) THEN
+	 utl_smtp.write_raw_data(xConn,
+	    utl_encode.base64_encode(utl_raw.substr(data, i,
+	    MAX_BASE64_LINE_WIDTH)));
+       ELSE
+	 utl_smtp.write_raw_data(xConn,
+	   utl_encode.base64_encode(utl_raw.substr(data, i)));
+       END IF;
+       utl_smtp.write_data(xConn, utl_tcp.CRLF);
+       i := i + MAX_BASE64_LINE_WIDTH;
+    END LOOP;
+**********/
+    end_attachment(last);
+  EXCEPTION_BLOCK
+	when others then
+	    SETSTATUS(SQLCODE);
+	    if (ERRORTEXT is null) then
+	      SET_ERRORTEXT(SQLERRM);
+	    end if;
+	    errorHandling;
+	    raise;
+  END_PROCEDURE;
+
+/*****************************************************************
+*****************************************************************
+*****************************************************************
+* Start and end mail
+* This is the actual starting point in the programme.
+*****************************************************************
+*****************************************************************
+*****************************************************************/
+
+/*****************************************************************
+* Starting and ending of a session and mail
+*****************************************************************/
+  PROCEDURE(begin_session)
+  IS
+    lConn utl_smtp.connection;
+  BEGIN
+    DEBUG_ENTER;
+    if (getSession = TRUE) then
+	USERERROR('Must end session before opening new');
+    end if;
+
+    -- open SMTP connection
+    openConnection;
+  EXCEPTION_BLOCK
+	when others then
+	    SETSTATUS(SQLCODE);
+	    if (ERRORTEXT is null) then
+	      SET_ERRORTEXT(SQLERRM);
+	    end if;
+	    errorHandling;
+	    raise;
+  END_FUNCTION;
+
+  ------------------------------------------------------------------------
+  PROCEDURE(begin_mail_in_session)(sender    IN VARCHAR2,
+				  recipients IN VARCHAR2,
+				  lCC	     in varchar2 default null,
+				  lBCC	     in varchar2 default null,
+				  subject    IN VARCHAR2,
+				  mime_type  IN VARCHAR2  DEFAULT MIME_TYPE_TEXTPLAIN,
+				  priority   IN PLS_INTEGER DEFAULT NULL) 
+  IS
+    my_recipients VARCHAR2(32767) := recipients;
+    my_sender     VARCHAR2(32767) := sender;
+  BEGIN
+    DEBUG_ENTER;
+    if (getMailSession = TRUE) then 
+	USERERROR('Must end mail session before opening new');
+    end if;
+
+    setMailSession(TRUE);
+    setMimeType(mime_type);
+
+    -- Specify sender's address (our server allows bogus address
+    -- as long as it is a full email address (xxx@yyy.com).
+    utl_smtp.mail(xConn, get_address(my_sender));
+
+    -- Specify recipient(s) of the email.
+    WHILE (my_recipients IS NOT NULL) LOOP
+      utl_smtp.rcpt(xConn, get_address(my_recipients));
+    END LOOP;
+
+    -- Start body of email
+    openData;
+
+    -- Set "From" MIME header
+    write_mime_header('From', sender);
+
+    -- Set "To" MIME header
+    write_mime_header('To', recipients);
+
+/****
+    -- Set "CC" MIME header
+    if (lCC is not null) then
+	    write_mime_header('Cc', lCC);
+    end if;
+
+    -- Set "BCC" MIME header
+    if (lCC is not null) then
+	    write_mime_header('Bcc', lBCC);
+    end if;
+***/
+
+    -- Set "Subject" MIME header
+    write_mime_header('Subject', subject);
+
+    -- Set "Content-Type" MIME header
+    write_mime_header('Content-Type', getMimeType);
+
+    -- Set "X-Mailer" MIME header
+    write_mime_header('X-Mailer', MAILER_ID);
+
+    -- Set priority:
+    --   High      Normal       Low
+    --   1     2     3     4     5
+    IF (priority IS NOT NULL) THEN
+      write_mime_header('X-Priority', priority);
+    END IF;
+
+    -- Send an empty line to denotes end of MIME headers and
+    -- beginning of message body.
+    utl_smtp.write_data(xConn, utl_tcp.CRLF);
+
+/* Removed. 070704 JOTHOR 
+ This is considered an informational message only
+
+    IF (mime_type LIKE 'multipart/mixed%') THEN
+      write_text('This is a multi-part message in MIME format.' ||
+	utl_tcp.crlf);
+    END IF;
+*/
+  EXCEPTION_BLOCK
+	when others then
+	    SETSTATUS(SQLCODE);
+	    if (ERRORTEXT is null) then
+	      SET_ERRORTEXT(SQLERRM);
+	    end if;
+	    errorHandling;
+	    raise;
+  END_PROCEDURE;
+
+  ------------------------------------------------------------------------
+  -- Closes down the a mail but retains connection
+  PROCEDURE(end_mail_in_session)
+  IS
+  BEGIN
+    DEBUG_ENTER;
+    if (getMailSession = FALSE) then
+ 	USERERROR('Cannot end a mail session which has not be opened');
+    end if;
+
+    if (getAttachmentCount > 0 and getLastAttachment = FALSE) then
+	USERERROR('Failed to use last on the final attachment');
+    end if;
+
+    if (getInAttachment) then
+	USERERROR('Programming error - should close attachment prior to ending mail');
+    end if;
+
+    closeData;
+    setMailSession(false);
+  EXCEPTION_BLOCK
+	when others then
+	    SETSTATUS(SQLCODE);
+	    if (ERRORTEXT is null) then
+	      SET_ERRORTEXT(SQLERRM);
+	    end if;
+	    errorHandling;
+	    raise;
+  END_PROCEDURE;
+
+  ------------------------------------------------------------------------
+  -- Disconnects from mail server
+  PROCEDURE(end_session)
+  IS
+  BEGIN
+    DEBUG_ENTER;
+    if (getSession = FALSE) then
+ 	USERERROR('Cannot end a session which has not be opened');
+    end if;
+
+    disconnect;
+  EXCEPTION_BLOCK
+	when others then
+	    SETSTATUS(SQLCODE);
+	    if (ERRORTEXT is null) then
+	      SET_ERRORTEXT(SQLERRM);
+	    end if;
+	    errorHandling;
+	    raise;
+  END_PROCEDURE;
+
+  ------------------------------------------------------------------------
+  PROCEDURE(end_mail)
+  IS
+  BEGIN
+    DEBUG_ENTER;
+    end_mail_in_session;
+    end_session;
+  EXCEPTION_BLOCK
+	when others then
+	    SETSTATUS(SQLCODE);
+	    if (ERRORTEXT is null) then
+	      SET_ERRORTEXT(SQLERRM);
+	    end if;
+	    errorHandling;
+	    raise;
+  END_PROCEDURE;
+
+  PROCEDURE(begin_mail)(sender     IN VARCHAR2,
+		      recipients IN VARCHAR2,
+  		      lCC	     in varchar2 default null,
+		      lBCC	     in varchar2 default null,
+		      subject    IN VARCHAR2,
+		      mime_type  IN VARCHAR2    DEFAULT MIME_TYPE_TEXTPLAIN,
+		      priority   IN PLS_INTEGER DEFAULT NULL)
+  IS
+    lInit boolean;
+  BEGIN
+    DEBUG_ENTER;
+    lInit := init;
+    begin_session;
+    begin_mail_in_session(sender,recipients,lCC,lBCC, subject,mime_type,priority);
+  END_PROCEDURE;
+
+/*****************************************************************
+* Quick send mail
+*****************************************************************/
+  PROCEDURE(mail)(sender    IN VARCHAR2,
+		 recipients IN VARCHAR2,
+		 lCC	     in varchar2 default null,
+		 lBCC	     in varchar2 default null,
+		 subject    IN VARCHAR2,
+		 message    IN VARCHAR2) IS
+  BEGIN
+    DEBUG_ENTER;
+    begin_mail(sender, recipients,lCC,lBCC, subject);
+    write_text(message);
+    end_mail;
+  END_PROCEDURE;
+
+/*****************************************************************
+* Output new line
+*****************************************************************/
+  PROCEDURE(newLine)(last boolean default false)
+  IS
+  BEGIN
+    DEBUG_ENTER;
+	if (isMultiMimeType = true) then
+	    begin_attachment(MIME_TYPE_TEXTPLAIN, true, null);
+ 	    utl_smtp.write_data(xConn, utl_tcp.CRLF);
+	    end_attachment(last);
+	else
+	    utl_smtp.write_data(xConn, utl_tcp.CRLF);
+	end if;
+  END_PROCEDURE;
+END_CREATE_PACKAGE_BODY;
+

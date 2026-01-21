@@ -1,0 +1,30 @@
+CREATE_TRIGGER(xxx)
+  before insert,update,delete
+  on yyyy
+  for each row
+declare
+/*****************************************************************
+*  Package Info
+*   Author        : $Author: JOTHOR $
+*   Original Date   : $Date: 2007/03/08 10:32:58 $
+*   Last Modified   : $Modtime: $
+*   Archive Name    : $Archive: $
+*   Description     : $Header: f:\private\repository/dbr/Template/trigger.mal,v 1.3 2007/03/08 10:32:58 JOTHOR Exp $
+*   Revision History: $Revision: 1.3 $
+*   Tag name        : $Name:  $
+*   Workfile      : $Workfile: $
+*****************************************************************
+* Description
+*
+*
+*****************************************************************
+* Log
+* Date   Description					 Done by
+*
+*****************************************************************/
+  STANDARD_VARIABLE;
+begin
+
+  EXCEPTION_BLOCK
+	STD_EXCEPTION_HANDLER;
+END_TRIGGER;

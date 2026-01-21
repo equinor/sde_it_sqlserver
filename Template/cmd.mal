@@ -1,0 +1,40 @@
+@echo off   
+rem *****************************************************************
+rem Author          : $Author:  $
+rem Original Date   : $Date:  $
+rem Last Modified   : $Modtime: $
+rem Archive Name    : $Archive: $
+rem Description     :  $
+rem Revision History: $Revision: 1.1 $
+rem Workfile        : $Workfile: $
+rem Copyright       : Equinor ASA
+rem *****************************************************************
+rem  Description
+rem 
+rem 
+rem *****************************************************************
+rem  Log
+rem  Date  Description                                      Done by
+rem *****************************************************************/
+
+set xStatus=0
+setlocal
+
+rem ***************************************
+rem Variable declaration.
+rem ***************************************
+
+
+rem ***************************************
+rem End of program
+rem ***************************************
+goto le_end
+
+:le_error
+echo Error occurred
+goto le_end
+
+:le_end
+echo (date /t & time /t)
+endlocal
+exit /b %xStatus%

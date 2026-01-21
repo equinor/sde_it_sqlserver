@@ -1,0 +1,131 @@
+CREATE_PROCEDURE(SF_UpdateBatchStatus)(pName Batch_Status.name%TYPE
+	,pStartDate Batch_Status.start_date%TYPE
+	,pEndDate Batch_Status.end_date%TYPE
+	,pNrError Batch_Status.nr_of_error%TYPE
+	,pNrBusinessTransaction Batch_Status.nr_business_transaction%TYPE
+	,pMessage Batch_Status.message%Type
+   ,pRetainHistory boolean default false
+   ,pHost SDE_IT.Batch_Status.HOST%TYPE DEFAULT 'NA'
+   )
+authid definer
+--authid current_user
+IS
+/***********************************************************************
+* Package Info
+* Author          : $Author: JOTHOR $
+* Original Date   : $Date: 2006/02/16 13:20:14 $
+* Last Modified   : $Modtime: $
+* Archive Name    : $Archive: $
+* Description     : $Header: F:/Private/Repository/dbr/Procedure/SF_UpdateBatchStatus.pcb,v 2.3 2006/02/16 13:20:14 JOTHOR Exp $
+* Revision History: $Revision: 2.3 $
+* Workfile        : $Workfile: $
+* Copyright info  : Copyright (c), Statoil ASA,Norway. $Date: 2006/02/16 13:20:14 $
+*
+*Description:
+*  
+* Parameters
+* ============
+* pName - the name of the batch job or application monitored (hereafter task)
+* pStartDate - the start time of task
+* pEndDate  - the end time of the task
+* pNrError  - the number of business transactions errors
+* pNrBusinessTransaction the total number of business transactions processed
+* pMessage  - informative message
+* pRetainHistory - default false. Should one desire to retain a history of
+*    the previous lHistoryLimit entries, send in true and the system will
+*    automatically maintain the history.
+*
+* Required table layout
+* =============================
+* create table batch_status
+* (
+*   name                     varchar2(100) not null,
+*   start_date               date,
+*   end_date                 date,
+*   nr_of_error              number,
+*   nr_business_transaction  number,
+*   message                  varchar2(1000),
+*   version                  interger
+* );
+* alter table batch_status add (primary key (name,version));
+*
+* ORA-06519:
+*	active autonomous transaction detected and rolled back
+* Cause: 	Before returning from an autonomous PL/SQL block,
+*  all autonomous transactions started within the block must
+*  be completed (either committed or rolled back). If not,
+*  the active autonomous transaction is implicitly rolled back
+*  and this error is raised.
+* Action: 	Ensure that before returning from an autonomous
+*  PL/SQL block, any active autonomous transactions are
+*  explicitly committed or rolled back. 
+*****************************************************************
+* Log
+* Date   Description                                              Done by
+* 140410 Added PRAGMA AUTONOMOUS_TRANSACTION;					  JOTHOR
+***********************************************************************/
+  PRAGMA AUTONOMOUS_TRANSACTION;
+
+  PACKAGE_VARIABLE($Revision: 2.3 $);
+  lCount number := 0;
+  lHistoryLimit integer := 5;
+begin
+   DEBUG('In SF_UpdateBatchStatus');
+	if (pName is null) then
+	  USERERROR(20,'Error occurred during update of batch_status table. pName is null');
+  	end if;
+
+   lCount := -1;
+   if (pRetainHistory = true) then
+     -------------------------------------------     
+     -- Move everything up one
+     -------------------------------------------     
+	  update Batch_Status
+	    set version = version + 1
+		where name = pName;
+     lCount := sql%rowcount;
+DEBUG('retain -Update nr of rows for <'||pname||'> : '||lCount);
+
+     -------------------------------------------     
+     -- Delete everything above limit
+     -------------------------------------------     
+     if (lCount > 0) then
+        delete Batch_Status
+            where name = pName
+            and version > lHistoryLimit;
+DEBUG('retain - Deleted nr of rows for <'||pname||'> : '||sql%rowcount);
+     end if;
+   else
+     delete Batch_Status
+       where name = pName;
+DEBUG('No retain -Deleted nr of rows for <'||pname||'> : '||sql%rowcount);
+   end if;
+
+   insert into Batch_Status (
+		 name
+        ,start_date
+        ,end_date
+		,nr_of_error
+        ,nr_business_transaction
+		,message
+        ,version
+	    ,host
+		)
+		values (
+       pName
+      ,pStartDate
+      ,pEndDate
+      ,pNrError
+      ,pNrBusinessTransaction
+      ,pMessage
+      ,1
+	  ,pHost
+		);
+   commit; -- Do not use macro C O M M I T as this will not expand for a SF_ procedure.
+  DEBUG('Leaving SF_UpdateBatchStatus');
+
+ EXCEPTION
+    when others then
+     rollback;
+     STD_EXCEPTION; -- Note, we are not using S T D_E X C E P T I O N_H A N D L E R
+END_PROCEDURE;

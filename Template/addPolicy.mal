@@ -1,0 +1,34 @@
+/*****************************************************************
+* Policy procedure Info
+* Author          : $Author:  $
+* Original Date   : $Date:  $
+* Last Modified   : $Modtime: $
+* Archive Name    : $Archive: $
+* Description     :  $
+* Revision History: $Revision: 1.1 $
+* Workfile        : $Workfile: $
+* Copyright       : Equinor ASA
+*****************************************************************
+* Description
+* Requirement: Select any dictionary
+* {xSchema}: Deploy policies
+* Name the file as {xSchema}_xxxx.sql
+*****************************************************************
+* Log
+* Date   Description                                     Done by
+*
+*****************************************************************/
+
+begin
+ sys.dbms_rls.add_policy(
+   object_schema => '{xSchema}',
+   object_name   => 'xxx',
+   policy_name   => 'xxx',
+   function_schema => 'xxx',
+   policy_function => 'xxx',
+   statement_types => 'SELECT,INSERT,UPDATE,DELETE',
+   policy_type      => dbms_rls.context_sensitive,   
+   enable          =>  TRUE
+  );
+end;
+s

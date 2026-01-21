@@ -1,0 +1,1067 @@
+CREATE_PACKAGE_BODY(Utility)
+-- authid definer
+is
+/*****************************************************************
+* Package Info
+* Author          : $Author: JOTHOR $
+* Original Date   : $Date: 2006/08/08 13:00:25 $
+* Last Modified   : $Modtime: 20.12.05 15:26 $
+* Archive Name    : $Archive: /DB/Utility.pcb $
+* Description     : $Header: f:\private\repository/dbr/Procedure/Utility.pcb,v 2.12 2006/08/08 13:00:25 JOTHOR Exp $
+* Revision History: $Revision: 2.12 $
+* Workfile        : $Workfile: Utility.pcb $
+* Copyright info  : Copyright (c), Statoil ASA,Norway. $Date: 2006/08/08 13:00:25 $
+*****************************************************************
+* Description
+*  This is a support package. Just throw exceptions, do not rollback.
+*
+*****************************************************************
+* Log
+* Date  Description                                      Done by
+* 170306 Corrected appendToUniqueList to handle regexp   JOTHOR
+*  special characters.
+* 070606 Altered deleteEntity to present the correct     JOTHOR
+*  entity name should the timestamp be changed. Was
+*  previously hardcoded to casing_entity.
+*****************************************************************/
+  PACKAGE_VARIABLE($Revision: 2.12 $);
+
+/*****************************************************************
+* Pragma
+*****************************************************************/
+  bufferTooSmall exception;
+  pragma exception_init(bufferTooSmall, -6502);  
+
+/*****************************************************************
+* Constants
+*****************************************************************/
+  xActual constant varchar2(20) := 'ACTUAL';
+
+/*****************************************************************
+* Variable - initialize variables in the constructor.
+* xInitialized   indicates whether package is initialized or not
+* xSql   string used for executing sql immediately or in cursors.
+* xMetaChar metacharacters as recognized in regexp
+*****************************************************************/
+  type cur_type is ref cursor;
+
+  xInitialized boolean;
+  xSql varchar2(2000);
+  xMetaChar varchar2(20);
+
+  xMaxIteration integer;
+  xIteration integer;
+
+  xBufferOverflowStr varchar2(100) := 'Failed to append buffer overflow: ';
+
+  xDatabase varchar2(50) := 'NA';
+
+/*****************************************************************
+* Standard methods
+*****************************************************************/
+  STD_PACKAGE_METHOD;
+
+/*****************************************************************
+* Init : Initializes the package
+* Init is called by the constructor.
+*****************************************************************/
+  FUNCTION(isInitialized)
+    return boolean
+  is
+  begin
+    MCR_RETURN(xInitialized);
+  END_FUNCTION;
+
+  /***************************************************************
+  * Bitwise functions
+  * bitand - is a standard function in Oracle
+  ***************************************************************/
+  FUNCTION(bitor)( x in number, y in number ) return number  as
+  begin
+    return x + y - bitand(x,y);
+  END_FUNCTION;
+
+  FUNCTION(bitxor)( x in number, y in number ) return number  as
+  begin
+    return bitor(x,y) - bitand(x,y);
+  END_FUNCTION;
+
+
+  /***************************************************************
+  * Executes the statement
+  ***************************************************************/
+  PROCEDURE(executeStatement)(lSql varchar2)
+  is
+  begin
+     if (lSql is null) then
+         USERERROR(11,'sql statement');
+     end if;
+
+DEBUG('SQL: '||lSql);
+     execute immediate lSql;
+  EXCEPTION
+      THROW_EXCEPTION_HANDLER;
+  END_PROCEDURE; 
+
+/***************************************************************
+* Checks if instance exists. 
+* Remember to fully qualify the entity in question.
+***************************************************************/
+   FUNCTION(keyExist)(
+          lEntity varchar2
+         ,lSuidName varchar2
+         ,lSuid SUID_TYPE
+         )
+     return boolean
+   is
+      lStatus boolean := false;
+      lSql varchar2(2000);
+      lCount integer;
+   begin
+     if (lEntity is null or lSuidName is null or lSuid is null) then
+      SYSTEMERROR(11,'lEntity: <'|| lEntity ||'> lSuidName: <'|| lSuidName ||'> lSuid: <'|| lSuid ||'>');
+    end if;      
+     ----------------------------------------------
+     -- Check existence of the entity
+     ----------------------------------------------
+    lSql := 'select count(*) from ' || lEntity
+      || ' where ' || lSuidName || ' = :lSuid';
+
+    execute immediate lSql into lCount using lSuid;
+    if (lCount > 0) then
+       lStatus := true;
+    end if;
+
+    MCR_RETURN(lStatus);
+   EXCEPTION_BLOCK
+      THROW_EXCEPTION_HANDLER;
+   END_FUNCTION;
+
+  /***************************************************************
+  * Append to further details. Builds up the string which is to 
+  * go into column 94 Further Details. Restricted to the length of
+  * the column. Error message produced if length is exceeded.
+  *
+  * Should the need arise to ensure only one occurrence of the new 
+  * string exists in the concatenated string, use REGEXP_INSTR 
+  * function in Oracle.
+  ***************************************************************/
+  PROCEDURE(append)(lColumn in out varchar2,lStr varchar2)
+  is
+  begin
+    lColumn := lColumn || lStr;
+  EXCEPTION_BLOCK
+     when bufferTooSmall then 
+--         lColumn :=  xBufferOverflowStr||substr(lColumn,1,length(lColumn)-length(xBufferOverflowStr));
+      USERERROR(20,xBufferOverflowStr||'<'||lStr||'> original str <'||lColumn||'>');
+     when others then
+      USERERROR(20,'Concatination failed <'||lStr||'> original str <'||lColumn||'>');
+  END_PROCEDURE;
+
+  PROCEDURE(appendToList)(lColumn in out varchar2,lStr varchar2,lSeparator varchar2 default ',')
+  is
+  begin
+    if (lColumn is null or length(ltrim(rtrim(lColumn))) = 0) then
+      lColumn := lStr;
+    else
+      lColumn := lColumn||lSeparator||lStr;
+    end if;
+  EXCEPTION_BLOCK
+     when bufferTooSmall then 
+--         lColumn :=  xBufferOverflowStr||substr(lColumn,1,length(lColumn)-length(xBufferOverflowStr));
+      USERERROR(20,xBufferOverflowStr||'<'||lStr||'> original str <'||lColumn||'>');
+     when others then
+   	USERERROR(20,'Concatination failed <'||lStr||'> original str <'||lColumn||'>');
+  END_PROCEDURE;
+
+  PROCEDURE(appendToUniqueList)(lColumn in out varchar2,lStr varchar2,lSeparator varchar2 default ',')
+  is
+    lSep varchar2(10);
+  begin
+    if (lColumn is null or length(ltrim(rtrim(lColumn))) = 0) then
+      lColumn := lStr;
+    else
+      lSep := lSeparator;
+
+      if (length(lSep) = 1) then
+         if (instr(xMetaChar,lSep) > 0) then
+            lSep := '\'||lSeparator;
+         end if;
+      end if;
+
+/*
+      if (regexp_instr(lColumn,'(' ||
+                    lSep||lStr|| '$' ||   -- handles the end
+               '|^' ||lStr||'$'||         -- handle the first and only occurrence
+               '|^' ||lStr||lSep||        -- handles the when first
+               '|'  ||lSep||lStr||lSep||  -- handles when not start nor end
+               ')' 
+          ) = 0) then
+        lColumn := lColumn||lSeparator||lStr;
+      end if;
+*/
+lColumn := ''; -- must fix this procedure
+    end if;
+  EXCEPTION_BLOCK
+     when bufferTooSmall then 
+      USERERROR(20,xBufferOverflowStr||'<'||lStr||'> original str <'||lColumn||'>');
+     when others then
+   	USERERROR(20,'Concatination failed <'||lStr||'> original str <'||lColumn||'>');
+  END_PROCEDURE;
+
+  /***************************************************************
+  * Conversion function
+  * Status : OK
+  ***************************************************************/
+  FUNCTION(convertMetreToFeet)(lLength number)
+    return number
+  is
+  begin
+     return lLength/0.3048;
+  END_FUNCTION;
+
+  FUNCTION(convertFeetToMetre)(lLength number)
+    return number
+  is
+  begin
+     return lLength*0.3048;
+  END_FUNCTION;
+
+  -- Convert g/cm2 to PSI, 1 psi = 7.0309 x 10-2 kg/cm2
+--xxx is this correct
+  FUNCTION(convertGPrCMToPSI)(lPressure number)
+    return number
+  is
+  begin
+     return lPressure * 10000/7.0309;
+  END_FUNCTION;
+
+  FUNCTION(convertCelsiusToFahrenheit)(lTemp number)
+    return number
+  is
+  begin
+     return 32+(9*lTemp)/5;
+  END_FUNCTION;
+
+  FUNCTION(convertFahrenheitToCelsius)(lTemp number)
+    return number
+  is
+  begin
+     return (lTemp - 32)*5/9;
+  END_FUNCTION;
+ 	
+   FUNCTION(strToNumber)(lStrNum varchar2)
+     return number
+   is
+     lStr varchar2(50);
+     lPos integer := 0;
+     lNum number := 0;
+   begin
+     -----------------------------------------------------------------
+     -- Trim the string and if no content return.
+     -----------------------------------------------------------------
+     lStr := ltrim(rtrim(lStrNum));
+     if (lStr is null or length(lStr) = 0) then
+       MCR_RETURN(null);
+     end if;
+
+     -----------------------------------------------------------------
+     -- Converts the following strings to number
+     -- 3 3/4  search for a space, split and calculate
+     -- 3,75   substitute the comma with decimal point and calculate
+     -- 3.75   normal conversion
+     -----------------------------------------------------------------
+     lPos := instr(lStr,' ',-1);
+     if (lPos > 0) then
+       lNum := to_number(substr(lStr,1,lPos - 1));
+       lStr := substr(lStr,lPos+1);
+       lPos := instr(lStr,'/');
+       lNum := lNum + to_number(substr(lStr,1,lPos-1)) / to_number(substr(lStr,lPos+1));
+	 else
+       lPos := instr(lStr,',',-1);
+       if (lPos > 0) then
+  	      lStr := translate(lStrNum,',','.'); 
+         lNum := to_number(lStr);
+       else
+         lNum := to_number(lStr);
+	    end if;
+     end if;
+
+     MCR_RETURN(lNum);
+  END_FUNCTION;
+
+  /***********************************************************
+  * Checks the timestamp to see if any changes have been made
+  * to the row.
+  * Paremeters:
+  * lEntity - the entity in focus
+  * lKey  - the column name of the unique key (a suid)
+  * lSuid - the suid value
+  * lTimestamp - the timestamp value to be verified
+  ***********************************************************/
+  FUNCTION(hasChanged)(lEntity varchar2,lKey varchar2,lSuid SUID_TYPE,lTimestamp TIMESTAMP_TYPE)
+    return boolean
+  is
+    lCount integer := 0;
+    lSql varchar2(1000);
+  begin
+      if (lSuid is null) then SYSTEMERROR(11,'suid');
+      elsif (lEntity is null) then SYSTEMERROR(11,'entity');
+      elsif (lKey is null) then SYSTEMERROR(11,'key value');
+      elsif (lTimestamp is null) then SYSTEMERROR(11,'timestamp');
+      end if;
+
+      lSql := 'select count(''x'')'
+         || ' from ' || lEntity ||' ent'
+         || ' where ent.' || lKey ||' = :lSuid'
+         || ' and ent.time_stamp = :lTimestamp';
+
+DEBUG('Sql: '||lSql);
+     execute immediate lSql into lCount using lSuid,lTimestamp;
+
+     if (lCount = 0) then
+         MCR_RETURN(true);
+     end if;
+
+     MCR_RETURN(false);
+  EXCEPTION
+    THROW_EXCEPTION_HANDLER;
+  END_FUNCTION;
+
+/******************************************************
+* Deletes an entity
+* Example usage:
+* To delete a particular well
+*   lEntity => 'well'
+*   lSuidName => 'well_s'
+*   lSuid => 6640
+*   lTimeStamp => 3245
+* This will delete the well identified by suid = lSuid
+* as long as the timestamp has not been modified.
+******************************************************/
+  PROCEDURE(deleteEntity)(
+          lEntity varchar2
+         ,lSuidName varchar2
+         ,lSuid SUID_TYPE
+         ,lTimestamp TIMESTAMP_TYPE
+         ,lRowcount out integer
+         )
+  is
+  begin
+     if (lEntity is null or length(lEntity) = 0) then
+         USERERROR(11,'entity');
+     elsif (lSuidName is null or length(lSuidName) = 0) then
+         USERERROR(11,'suid name');
+     elsif (lSuid is null) then
+         USERERROR(11,lSuidName);
+     elsif (lTimestamp is null) then
+         USERERROR(11,'time_stamp');
+     end if;
+
+     if (FRAMEWORK_SCHEMA.Utility.hasChanged(lEntity,lSuidName,lSuid,lTimestamp)) then
+       USERERROR(19,'delete',lEntity);
+     end if;
+
+     ----------------------------------------------
+     -- Delete the entity
+     ----------------------------------------------
+    xSql := 'delete from ' || lEntity
+      || ' where ' || lSuidName || ' = :lSuid'
+      || ' and time_stamp = :lTimeStamp';
+
+    execute immediate xSql using lSuid,lTimeStamp;
+    lRowcount := sql%rowcount;
+  EXCEPTION
+    THROW_EXCEPTION_HANDLER;
+  END_PROCEDURE;
+
+-------------------------------------------------
+-- Gets the next suid
+-------------------------------------------------
+/*  FUNCTION(getNextSuid)
+     return pls_integer
+  is
+    lNewSuid SUID_TYPE;
+  begin
+      select to_char (dbr.dbr_seq.nextval)
+        into lNewSuid
+        from sys.dual;
+
+      MCR_RETURN(lNewSuid);
+  EXCEPTION
+      THROW_EXCEPTION_HANDLER;
+  END_FUNCTION; 
+*/
+
+
+  /***************************************************************
+  * Manipulates the indexes on the given table. One can disable the
+  * indexes or rebuild them (which also enables them)
+  * How to disable and later enable all table indexes in Oracle
+  * (see http://stackoverflow.com/questions/129046/disable-and-later-enable-all-table-indexes-in-oracle)
+  ***************************************************************/
+  PROCEDURE(manipulateIndex)(lSchema varchar2,lTableName varchar2,lAction varchar2 default 'rebuild')
+  is
+    cursor lIndex (lSchema varchar2,lTableName varchar2)
+     is select u.index_name
+     from user_indexes u
+     where table_name = lTableName ;
+
+    lStr varchar2(100);
+  begin
+     if (lTableName is null) then
+       USERERROR(11,'table_name');
+     elsif (lAction = 'disable') then
+       lStr := 'unusable';
+     elsif (lAction = 'rebuild') then
+       lStr := 'rebuild online';
+     else
+       USERERROR(20,'Legal values <disable> or <rebuild online>');
+     end if;
+
+     for i in lIndex(lSchema,lTableName)
+     loop
+       executeStatement('alter index '||i.index_name|| ' ' || lStr);
+     end loop;
+  EXCEPTION
+    THROW_EXCEPTION_HANDLER;
+  END_PROCEDURE;
+
+  PROCEDURE(disableIndex)(lSchema varchar2,lTableName varchar2)
+  is
+  begin
+      manipulateIndex(lSchema,lTableName,'disable');
+  EXCEPTION
+    THROW_EXCEPTION_HANDLER;
+  END_PROCEDURE;
+
+  PROCEDURE(rebuildIndex)(lSchema varchar2,lTableName varchar2)
+  is
+  begin
+      manipulateIndex(lSchema,lTableName,'rebuild');
+  EXCEPTION
+    THROW_EXCEPTION_HANDLER;
+  END_PROCEDURE;
+
+  /***************************************************************
+  * Truncates the table
+  ***************************************************************/
+  PROCEDURE(truncateTable)(lSchema varchar2,lTable varchar2)
+  is 
+  begin
+     executeStatement('truncate table '||lSchema||'.'||lTable);
+  EXCEPTION
+    THROW_EXCEPTION_HANDLER;
+  END_PROCEDURE;
+
+  /***************************************************************
+  * Checks if table exists
+  ***************************************************************/
+  FUNCTION(existTable)(lSchema varchar2, lTableName varchar2)
+     return boolean
+  is
+     cursor curTable(lSchema varchar2, lTableName varchar2)
+       is select count(*) as count
+         from user_tables
+         where table_name = lTableName;
+      lCount integer := 0;
+  begin
+     for i in curTable(lSchema,lTableName)
+     loop
+         lCount := i.count;
+         exit;
+     end loop;
+     if (lCount > 0) then
+         MCR_RETURN(true);
+     end if;    
+
+     MCR_RETURN(false);
+  EXCEPTION
+      THROW_EXCEPTION_HANDLER;
+  END_FUNCTION; 
+
+  /***************************************************************
+  * Create shadow table
+  * Creates a shadow table and indexes. Contrainsts are not handled.
+  ***************************************************************/
+  PROCEDURE(createShadowTable)(lSchema varchar2,lTableName varchar2,lShadowTableName varchar2,lDrop boolean default false)
+  is
+    cursor curTable(lSchema varchar2,lTableName varchar2) is
+      select t.table_name
+         from user_tables t
+         where t.table_name = lTableName;
+
+    cursor curTableColumn(lSchema varchar2,lTableName varchar2) is
+      select c.column_name
+            ,c.data_type
+            ,decode(data_type
+                     ,'CHAR', char_length
+                     ,'VARCHAR', char_length
+                     ,'VARCHAR2', char_length
+                     ,'NCHAR', char_length
+                     ,'NVARCHAR', char_length
+                     ,'NVARCHAR2', char_length
+                    ) data_length
+            ,c.data_precision
+            ,decode(c.nullable
+                     ,'N','NOT NULL'
+                     ,'NULL') nullable
+            ,c.column_id
+            ,decode(c.data_type
+               ,'VARCHAR2','VARCHAR2('||c.data_length||')'
+               ,'CHAR','CHAR('||c.data_length||')'
+               ,'NUMBER','NUMBER('||c.data_precision||decode(c.data_scale,'','',','||c.data_scale) ||  ')'
+               ,c.data_type
+               ) as strType
+            ,c.data_default
+         from user_tables t
+             ,user_tab_columns c
+         where t.table_name = lTableName
+         and t.table_name = c.table_name
+         order by c.TABLE_NAME, c.column_id;
+
+    cursor curIndex(lSchema varchar2,lTableName varchar2,lShadowTable varchar2)
+      is select 'create '||decode(uniqueness,'NONUNIQUE','','UNIQUE','UNIQUE')
+            ||' index '||i.table_owner ||'.'|| i.index_name   --xxxxxxxxxx - use lShadowTable!!
+            ||' on '||i.table_owner||'.'||i.table_name
+            as text
+           ,i.table_owner,i.table_name,i.index_name
+      from user_indexes i
+      where i.table_name = lTableName
+      and i.table_owner = lSchema
+      order by i.table_owner,i.table_name;
+
+    cursor curIndexColumn(lSchema varchar2,lTableOwner varchar2,lTable varchar2,lIndex varchar2) is
+      select c.column_name,c.descend,c.column_position
+      from  user_ind_columns c
+      where c.index_name = lIndex
+      and c.table_name = lTable
+      order by c.table_name,c.table_name,c.column_position;
+    
+    lStr varchar2(4000) := '';
+    lSql varchar2(4000) := '';
+    lTableSpace varchar2(100) := '';
+    lCount integer := 1;
+  begin
+    ------------------------------------------------
+    -- Create the table
+    ------------------------------------------------
+    if (lDrop) then
+        lSql := 'drop table '|| lShadowTableName;
+    end if;
+
+    lSql := 'create table '|| lShadowTableName || '(';
+    for i in curTableColumn(lSchema,lTableName)
+    loop
+       lStr := i.column_name || ' ' || i.strType;
+       if (i.data_default is not null) then
+           lStr := lStr || ' default ' || i.data_default;
+       end if;
+ 
+       lStr := lStr || ' ' || i.nullable;
+       if ((length(lStr) + length(lSql)) > 1000) then
+          lSql := lSql ||')';
+          executeStatement(lSql);
+          lSql := '';
+          lSql := 'ALTER TABLE '|| lShadowTableName || ' add (';
+          lCount := 1;
+        end if;
+
+        if (lCount > 1) then
+           lStr := ','||lStr;
+        end if;
+
+        lSql := lSql || lStr;
+        lCount := lCount + 1;
+    end loop;
+
+    if (lSql is not null) then
+       lSql := lSql ||')';
+       executeStatement(lSql);
+    end if;
+
+    ------------------------------------------------
+    -- Create the table indexes
+    ------------------------------------------------
+    for i in curIndex(lSchema,lTableName,lShadowTableName)
+    loop
+      lSql := '';
+      lSql := lSql||i.text||'(';
+      for j in curIndexColumn(lSchema,i.Table_owner,i.table_name,i.index_name)
+      loop
+         if (j.column_position > 1) then
+           lSql := lSql|| ',' ;
+         end if;
+        lSql := lSql||j.column_name || ' ' || j.descend;
+      end loop;
+      lSql := lSql||');';
+      executeStatement(lSql);
+    end loop;
+  EXCEPTION
+      THROW_EXCEPTION_HANDLER;
+  END_PROCEDURE;
+
+  /***************************************************************
+  * Database schema information
+  ***************************************************************/
+  FUNCTION(getDatabaseName)
+    return varchar2
+  is
+  begin
+    return sys_context('userenv','db_name');
+  EXCEPTION
+      THROW_EXCEPTION_HANDLER;
+  END_FUNCTION;
+
+  FUNCTION(isProduction)
+    return char
+  is
+  begin
+    if (xDatabase = FRAMEWORK_SCHEMA.IT_Constant.xDBProd) then
+      return FRAMEWORK_SCHEMA.IT_Constant.xTrue;
+    end if;
+
+    return FRAMEWORK_SCHEMA.IT_Constant.xFalse;
+  EXCEPTION
+      THROW_EXCEPTION_HANDLER;
+  END_FUNCTION;
+
+  FUNCTION(isTest )
+    return char
+  is
+  begin
+    if (xDatabase = FRAMEWORK_SCHEMA.IT_Constant.xDBTest) then
+      MCR_RETURN(FRAMEWORK_SCHEMA.IT_Constant.xTrue);
+    end if;
+
+    MCR_RETURN(FRAMEWORK_SCHEMA.IT_Constant.xFalse);
+  EXCEPTION
+      THROW_EXCEPTION_HANDLER;
+  END_FUNCTION;
+
+  FUNCTION(isDevelopment)
+    return char
+  is
+  begin
+    if (xDatabase = FRAMEWORK_SCHEMA.IT_Constant.xDBDev) then
+      MCR_RETURN(FRAMEWORK_SCHEMA.IT_Constant.xTrue);
+    end if;
+
+    MCR_RETURN(FRAMEWORK_SCHEMA.IT_Constant.xFalse);
+  EXCEPTION
+      THROW_EXCEPTION_HANDLER;
+  END_FUNCTION;
+
+  -------------------------------------------------------
+  -- Get the site name  
+  -------------------------------------------------------
+  FUNCTION(getSite)
+    return varchar2
+  is
+  begin
+     MCR_RETURN(FRAMEWORK_SCHEMA.IT_Constant.xSiteName);
+  EXCEPTION
+      THROW_EXCEPTION_HANDLER;
+  END_FUNCTION;
+
+  -------------------------------------------------------
+  -- Support function
+  -------------------------------------------------------
+  PROCEDURE(getColInfo)(lStr varchar2,lType out varchar2,lLength out number, lScale out number,lNull out boolean) 
+  is
+    lRBrac integer := 0;
+    lLBrac integer := 0;
+    lComma integer := 0;
+    lSpace integer := 0;
+    lStartNull integer := 0;
+  begin
+     if (lStr is null) then 
+        USERERROR(11,'incoming string to decode');
+     end if;
+     
+     lScale := 0;
+     lNull := true;
+     lLength := 0;
+     lType := null;
+
+     lStartNull := instr(lStr,'NOT NULL',-1);
+     if (lStartNull > 0) then
+         lNull := false;
+     else
+        lNull := true;
+        lStartNull := instr(lStr,'NULL',-1);     
+     end if;
+
+     -------------------------------------------------------------------
+     -- If there is a left bracket, pick up size and scale if present. Scale
+     -- is present if a comma exists within left/right bracket.
+     -- If no bracket: if there was no null/not null (identified by the
+     -- lStartNull being equal to zero(0)), the entire string is the type.
+     -- otherwise the type ends 2 positions prior to lStartNull (recall there
+     -- is a space before the null/not null).
+     -------------------------------------------------------------------
+     lLBrac := instr(lStr,'(');
+     if (lLBrac > 0) then
+         lRBrac := instr(lStr,')');
+         lComma := instr(lStr,',');
+
+         lType := substr(lStr,1,lLBrac - 1);
+         if (lComma = 0) then
+            lLength := substr(lStr,lLBrac+1,lRBrac - (lLBrac+1));
+         else   
+            lLength := substr(lStr,lLBrac+1,lComma - (lLBrac+1));
+            lScale := substr(lStr,lComma+1,lRBrac - (lComma+1));
+         end if;
+      else 
+   		if (lStartNull = 0) then
+	   	   lType := lStr;
+		   else
+            lType := substr(lStr,1,lStartNull - 2);
+   		end if;
+      end if;
+  EXCEPTION
+      THROW_EXCEPTION_HANDLER;
+  END_FUNCTION; 
+  
+  FUNCTION(getColumnSize)(lSchema varchar2,lTable varchar2,lColumn varchar2)
+    return integer
+  is
+/*    cursor cur_info(lTable varchar2,lColumn varchar2)
+      is select r.value_description
+         from dbr.r_table_def r
+         where r.table_kind = 'TABLE'
+         and r.table_name = lTable
+         and r.column_name = lColumn;
+*/    lType varchar2(100);
+    lLength number := 0;
+    lScale number;
+    lNull boolean;
+    lStr varchar(100);
+  begin
+      if (lSchema is null) then
+         USERERROR(11,'schema');
+      elsif (lTable is null) then
+         USERERROR(11,'table');
+      elsif (lColumn is null) then
+         USERERROR(11,'column');
+      end if;
+/*
+      OPEN_CURSOR(cur_info)(lTable,lColumn);
+      fetch cur_info into lStr;
+      CLOSE_CURSOR(cur_info);
+
+      getColInfo(lStr,lType,lLength,lScale,lNull);
+*/
+      MCR_RETURN(lLength);
+  EXCEPTION
+      THROW_EXCEPTION_HANDLER;
+  END_FUNCTION; 
+
+  FUNCTION(getNrColumn)(lSchema varchar2,lTable varchar2)
+    return integer
+  is
+/*    cursor cur_info(lTable varchar2)
+      is select count(*) leCount
+         from dbr.r_table_def r
+         where r.table_kind = 'TABLE'
+         and r.table_name = lTable;
+*/
+    lCount integer := 0;
+  begin
+      if (lSchema is null) then
+         USERERROR(11,'schema');
+      elsif (lTable is null) then
+         USERERROR(11,'table');
+      end if;
+/*
+      for i in cur_info(lTable)
+      loop
+         lCount := i.leCount;
+      end loop;
+*/
+      MCR_RETURN(lCount);
+  EXCEPTION
+      THROW_EXCEPTION_HANDLER;
+  END_FUNCTION; 
+
+  FUNCTION(getNrTable)(lSchema varchar2)
+    return integer
+  is
+--    cursor cur_info(lSchema varchar2)
+--      is select count(distinct table_name) leCount
+--         from dbr.r_table_def r
+--         where r.table_kind = 'TABLE';
+
+    lCount integer := 0;
+  begin
+      if (lSchema is null) then
+         USERERROR(11,'schema');
+      end if;
+
+--      for i in cur_info(lSchema)
+--      loop
+--         lCount := i.leCount;
+--      end loop;
+
+      MCR_RETURN(lCount);
+  EXCEPTION
+      THROW_EXCEPTION_HANDLER;
+  END_FUNCTION; 
+
+  FUNCTION(existColumn)(lSchema varchar2,lTable varchar2,lColumn varchar2)
+    return boolean
+  is
+/*    cursor cur_info(lTable varchar2,lColumn varchar2)
+      is select count('x')
+         from dbr.r_table_def r
+         where r.table_kind = 'TABLE'
+         and r.table_name = lTable
+         and r.column_name = lColumn;
+*/
+    lCount integer := 0;
+  begin
+      if (lSchema is null) then
+         USERERROR(11,'schema');
+      elsif (lTable is null) then
+         USERERROR(11,'table');
+      elsif (lColumn is null) then
+         USERERROR(11,'column');
+      end if;
+
+/*      OPEN_CURSOR(cur_info)(lTable,lColumn);
+      fetch cur_info into lCount;
+      CLOSE_CURSOR(cur_info);
+*/
+      if (lCount = 0) then
+         MCR_RETURN(false);
+      end if;
+
+      MCR_RETURN(true);
+  EXCEPTION
+      THROW_EXCEPTION_HANDLER;
+  END_FUNCTION; 
+
+  FUNCTION(existTable)(lSchema varchar2,lTable varchar2)
+    return boolean
+  is
+/*    cursor cur_info(lTable varchar2)
+      is select count('x')
+         from dbr.r_table_def r
+         where r.table_kind = 'TABLE'
+         and r.table_name = lTable;
+*/
+    lCount integer := 0;
+  begin
+      if (lSchema is null) then
+         USERERROR(11,'schema');
+      elsif (lTable is null) then
+         USERERROR(11,'table');
+      end if;
+
+/*      OPEN_CURSOR(cur_info)(lTable);
+      fetch cur_info into lCount;
+      CLOSE_CURSOR(cur_info);
+*/
+      if (lCount = 0) then
+         MCR_RETURN(false);
+      end if;
+
+      MCR_RETURN(true);
+  EXCEPTION
+      THROW_EXCEPTION_HANDLER;
+  END_FUNCTION; 
+
+
+  PROCEDURE(loadSchema)(lSchema varchar2)
+  is
+    cursor cur_info
+      is select * from user_tab_columns
+      order by table_name,column_name;
+  begin
+    if (lSchema is null) then
+      USERERROR(11,'schema');
+    end if;
+
+    if (lSchema != user) then
+      USERERROR(20,'Schema <'||lSchema||'> must be the same as the user <'||user||'>');
+    end if;
+
+    USERERROR(20,'Not implemented');
+  EXCEPTION
+      THROW_EXCEPTION_HANDLER;
+  END_FUNCTION; 
+
+---------------------------------------------------------------------
+-- Gets the details of a table.
+-- Parameters:
+-- lSchema - schema the table resides in.
+-- lTable  - table name.
+-- lCursor - result set.
+---------------------------------------------------------------------
+   PROCEDURE(getTable)(lSchema varchar2,lTable varchar2,lCursor out t_cursor)
+   is
+   begin
+      if (lSchema is null) then
+        USERERROR(11,'schema');
+      end if;
+
+      if (lTable is null) then
+        USERERROR(11,'table');
+      end if;
+
+/*      open lCursor for
+         select r.*
+            from dbr.r_table_def r
+            where r.table_kind = 'TABLE'
+            and r.table_name = upper(lTable)
+            and r.r_existence_kd_nm = xActual;
+*/
+   EXCEPTION
+      THROW_EXCEPTION_HANDLER;
+   END_PROCEDURE; 
+
+/*****************************************************************
+* Sorting routines.
+*****************************************************************/
+   PROCEDURE(qsort)(lList in out nocopy type_SortList,lLow0 integer,lHigh0 integer)
+   is
+     lLow integer;
+     lHigh integer;
+     lTemp integer;
+     lMid integer;
+     lIndex integer;
+   begin
+/*      xIteration := xIteration + 1;
+      if (xIteration > xMaxIteration) then
+         SYSTEMERROR('Max number of iterations <'||xMaxIteration||'> exceeded');
+      end if;
+*/
+      DEBUG('In qsort low = <'||lLow0||'> and high = <'||lHigh0||'>');
+   	lLow := lLow0;
+   	lHigh := lHigh0;
+
+   	if (lLow >= lHigh) then
+   	    return;
+   	end if ;
+   
+      lIndex := floor((lLow + lHigh) / 2);
+   	lMid := lList(lIndex);
+      DEBUG('lMid('||lIndex||') = <'||lMid||'>');
+
+   	while (lLow < lHigh) 
+   	loop
+         while (lLow < lHigh and lList(lLow) < lMid) 
+   		loop
+            lLow := lLow + 1;
+         end loop;
+   
+   	   while (lLow < lHigh and lList(lHigh) > lMid)
+   		loop
+   		   lHigh := lHigh - 1;
+   	   end loop;
+   
+   	   if (lLow < lHigh) then
+    		   lTemp := lList(lLow);
+   		   lList(lLow) := lList(lHigh);
+   		   lList(lHigh) := lTemp;
+            lLow := lLow + 1;
+            lHigh := lHigh - 1;
+   	   end if;
+   	end loop;
+   
+   	if (lHigh < lLow) then
+   	    lTemp := lHigh;
+   	    lHigh := lLow;
+   	    lLow := lTemp;
+   	end if;
+   
+   	qsort(lList, lLow0, lLow);
+   
+   	if (lLow = lLow0) then
+         DEBUG('  Using lLow +1');
+         qsort(lList, lLow+1, lHigh0);
+   	else
+         DEBUG('  Using lLow');
+   	   qsort(lList, lLow, lHigh0);
+   	end if;
+   END_PROCEDURE;
+
+   PROCEDURE(sort)(lList in out nocopy type_SortList,sortType integer default USE_QSORT)
+   is
+      lLow0 integer;
+      lHigh0 integer;
+   begin
+      xIteration := 0;
+      case
+         when (sortType = USE_QSORT) then
+            lLow0 := lList.first;
+            lHigh0 := lList.last;
+            DEBUG('In sort low = <'||lLow0||'> and high = <'||lHigh0||'>');
+            qsort(lList,lLow0,lHigh0);
+         else
+            USERERROR(20,'Unknown sort type ('||sortType||')');
+      end case;
+   EXCEPTION_BLOCK
+      STD_EXCEPTION_HANDLER;
+   END_PROCEDURE;
+
+   PROCEDURE(testSort)
+   is
+      lLow0 integer;
+      lHigh0 integer;
+      lList type_SortList := type_SortList(1,6,2,9,44,23,12,67,4,124,5,6,77,1,6,2,9,44,23,12,67,4,124,5,6,77,1,6,2,9,44,23,12,67,4,124,5,6,77,1,6,2,9,44,23,12,67,4,124,5,6,77,1,6,2,9,44,23,12,67,4,124,5,6,77,1,6,2,9,44,23,12,67,4,124,5,6,77,1,6,2,9,44,23,12,67,4,124,5,6,77);
+      PROCEDURE(display)(lStr varchar2,lList type_SortList)
+      is
+      begin
+         DEBUG(lStr);
+         for i in lList.first..lList.last
+         loop
+            null;
+            DEBUG('lList('||i||') = <'||lList(i)||'>');
+         end loop;
+         DEBUG('Nr of interations : '||xIteration);
+      END_PROCEDURE;
+   begin
+      errorHandler.setLevel(errorHandler.level_trace);
+      display('Unsorted list',lList);
+      lLow0 := lList.first;
+      lHigh0 := lList.last;
+      sort(lList);      
+      DEBUG('Low(0) = '||lLow0);
+      DEBUG('lHigh(0) = '||lHigh0);
+      display('Sorted list',lList);
+   END_PROCEDURE;
+   
+/*********************************************
+* The constructor
+*********************************************/
+begin
+  xInitialized := false;
+  xMetaChar := '^$.*+?\';
+
+  ---------------------------------------
+  -- For use with sorting,
+  ---------------------------------------
+  xInitialized := FALSE;
+  xMaxIteration := 2000;
+  USE_QSORT := 1;
+
+  ---------------------------------------
+  -- Identify the database
+  ---------------------------------------
+  xDatabase := FRAMEWORK_SCHEMA.Utility.getDatabaseName;
+
+  /*
+  if (xDatabase != FRAMEWORK_SCHEMA.IT_Constant.xDBProd
+     and xDatabase != FRAMEWORK_SCHEMA.IT_Constant.xDBTest
+     and xDatabase != FRAMEWORK_SCHEMA.IT_Constant.xDBDev
+     ) 
+  then
+     USERERROR(20,'Failed to identify database: <'|| xDatabase ||'>');
+  end if;
+*/
+  -- Last statement to be executed
+  xInitialized := true;
+EXCEPTION
+  	THROW_EXCEPTION_HANDLER;
+END_CREATE_PACKAGE_BODY;

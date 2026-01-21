@@ -1,0 +1,74 @@
+CREATE_TRIGGER({triggerName})
+  before insert or update
+  ON {triggerTable}
+  for each row
+declare
+/*****************************************************************
+*  Package Info
+*   Author          : $Author:  $
+*   Original Date   : $Date:  $
+*   Last Modified   : $Modtime: $
+*   Archive Name    : $Archive: $
+*   Description     : $Header:  $
+*   Revision History: $Revision: $
+*   Tag name        : $Name:  $
+*   Workfile        : $Workfile: $
+*****************************************************************
+* Description
+*  Maintains the create and update columns in the A table.
+*
+* Condition:
+* Requires all editing to be done on the SDEDEFAULT version. 
+* This trigger is invalid should users begin to start using the
+* verion system as intended ie separate versions are create, edited
+* and reconciled at a later stage.
+*****************************************************************/
+  STANDARD_VARIABLE;
+
+  lCount int := 0;
+  lIsNewObject boolean := false;
+  lCreateUser {triggerTable}.st_row_create_user%type;
+  lCreateDate {triggerTable}.st_row_create_date%type;
+begin
+  if (inserting and user <> 'SDE') then
+    select count(*) into lCount 
+       from {triggerTable} 
+       where {parentKey} = :new.{parentKey};
+
+    if (lCount = 0) then  -- new row in A table but it may exist in the base table.
+       select count(*) into lCount 
+          from {parentTable} 
+          where {parentKey} = :new.{parentKey};
+
+       if (lCount = 0) then
+         lIsNewObject := true;
+       else
+         lIsNewObject := false;
+       end if; 
+    else
+       lIsNewObject := false;
+    end if;
+
+    if (lIsNewObject = true) then
+      :new.st_row_create_user := user;
+      :new.st_row_create_date := sysdate;
+    else
+       select st_row_create_user,st_row_create_date
+          into lCreateUser,lCreateDate 
+          from {triggerTable} 
+          where {parentKey} = :new.{parentKey}
+          and st_row_update_user is null;
+
+      :new.st_row_create_user := lCreateUser;
+      :new.st_row_create_date := lCreateDate;
+      :new.st_row_update_user := user;
+      :new.st_row_update_date := sysdate;
+    end if;  
+  elsif (updating and user <> 'SDE') then
+    :new.st_row_update_user := user;
+    :new.st_row_update_date := sysdate;
+  end if;
+
+ EXCEPTION_BLOCK
+   THROW_EXCEPTION_HANDLER;
+END_TRIGGER;

@@ -1,0 +1,54 @@
+Do we need this.
+CREATE_FUNCTION(xxx)
+--with execute ???
+--with execute as owner
+as
+/*****************************************************************
+*  Program Info
+*   Author          : $Author:  $
+*   Original Date   : $Date:  $
+*   Last Modified   : $Modtime: $
+*   Archive Name    : $Archive: $
+*   Description     : $Header:  $
+*   Revision History: $Revision: 1.0 $
+*   Tag name        : $Name:  $
+*   Workfile        : $Workfile: $
+*   Copyright       : $Equinor ASA: $
+*****************************************************************
+* Description
+*
+*****************************************************************
+* Log
+* Date   Description                                        Done by
+* 280323 Upgraded to Sqlserver                              JOTHOR
+*****************************************************************/
+begin
+  STANDARD_VARIABLE;
+  -- Recommended
+   set nocount on;
+   
+   open cur;
+   while GET_FETCH_STATUS = 0
+      fetch  from cur into @result,@lOrdinal
+   close cur;      
+   deallocate cur;
+   
+   BEGIN_TRANSACTION;
+      open du_candidates;
+      fetch next from bi_candidates into @lObjectId;
+      if GET_FETCH_STATUS = 0
+      begin
+         while GET_FETCH_STATUS = 0
+         begin
+            xxx
+            fetch next from bi_candidates into @lObjectId;  
+         end;
+      end;
+      COMMIT;
+      close bi_candidates;
+      deallocate bi_candidates;
+   END_TRANSACTION;
+   
+   EXCEPTION_BLOCK
+      STD_EXCEPTION_HANDLER;
+END_CREATE_FUNCTION;
