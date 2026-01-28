@@ -1,6 +1,9 @@
-CREATE_FUNCTION(checkEpsilon)(lName varchar2,lActualCount int,lExpectedCount int)
-  return int
-  authid definer  
+CREATE_FUNCTION(checkEpsilon)(@lName nvarchar
+   ,@lActualCount integer
+   ,@lExpectedCount integer
+   )
+  returns integer
+  --authid definer  
 /*****************************************************************
 *  Function Info
 *   Author          : $Author: JOTHOR $
@@ -28,73 +31,97 @@ CREATE_FUNCTION(checkEpsilon)(lName varchar2,lActualCount int,lExpectedCount int
 *****************************************************************
 * Log
 * Date   Description                                        Done by
-*
+* 210126 Translated from Oracle to Sqlserver                JOTHOR
 *****************************************************************/  
-is
-   STANDARD_VARIABLE;
-   @lLower  nvarchar(50);
-   @lLower_unit nvarchar(50);
-   @lUpper  nvarchar(50);
-   @lUpper_unit nvarchar(50);
-   @lDiff integer = 0;
-   @lRetValue integer = 0;
-   @lExpCount integer; -- used instead of lExpectedCount due to assignment.
+as
 begin
-   set @lExpCount = lExpectedCount;
-   if @lExpCount = 0 and @lActualCount = 0 then
-      return 0;
-   end if;
+   STANDARD_VARIABLE;
+   declare @lLower  nvarchar(50)
+      ,@lLower_unit nvarchar(50)
+      ,@lUpper  nvarchar(50)
+      ,@lUpper_unit nvarchar(50)
+      ,@lDiff integer = 0
+      ,@lRetValue integer = 0
+      ,@lExpCount integer; -- used instead of lExpectedCount due to assignment.
       
-   select @lLower=lower
-         ,@lLower_unit = lower_unit
-         ,@lUpper = upper
-         ,@lUpper_unit = upper_unit
-      from sde_it.epsilon
-      where lower(name) = lower(lName);
+   -- B EGIN_EXCEPTION
+      set @lExpCount = @lExpectedCount;
+      if @lExpCount = 0 and @lActualCount = 0 
+      begin
+         return 0;
+      end;
+         
+      select @lLower=lower
+            ,@lLower_unit = lower_unit
+            ,@lUpper = upper
+            ,@lUpper_unit = upper_unit
+         from sde_it.epsilon
+         where lower(name) = lower(@lName);
+      if (GET_ROWCOUNT = 0)
+      begin
+         return 1;
+         --THROW_DATA_NOT_FOUND_EXCEPTION('sde_it.epsilon');
+      end;
+      
+      ---------------------------------------------------------
+      -- Doesn't work too well if  lExpectedCount=0
+      -- Dirty trick: set lExpCount to 1 (one) if lExpectedCount=0
+      ---------------------------------------------------------
+      set @lDiff = @lActualCount-@lExpCount;
+      DEBUG(@lName+': Lower='+@lLower+' Lower_unit='+@lLower_unit+' lDiff='+@lDiff);
+      if (@lLower >= 0 and @lDiff <= 0)
+      begin
+         if (@lLower_unit in ('procent','absolute')) 
+         begin
+            if @lLower_unit in ('procent')
+            begin
+               DEBUG(@lName+': Procent='+@lDiff*100/@lExpCount);
+               if (@lExpCount=0)
+               begin
+                  set @lExpCount=1;
+               end;
+               
+               if (@lExpCount > 0 and abs(@lDiff)*100/@lExpCount > @lLower)
+               begin
+                  set @lRetValue = -1;
+               end;
+            end
+            else if (abs(@lDiff) > @lLower)  -- absolute check
+            begin
+               set @lRetValue = -1;
+            end;
+         end;       
+      end;
 
-   ---------------------------------------------------------
-   -- Doesn't work too well if  lExpectedCount=0
-   -- Dirty trick: set lExpCount to 1 (one) if lExpectedCount=0
-   ---------------------------------------------------------
-   lDiff := lActualCount-lExpCount;
-   DEBUG(lName||': Lower='||lLower||' Lower_unit='||lLower_unit||' lDiff='||lDiff);
-   if (lLower >= 0 and lDiff <= 0) then
-      if (lLower_unit in ('procent','absolute')) then
-         if lLower_unit in ('procent') then
-            DEBUG(lName||': Procent='||lDiff*100/lExpCount);
-            if (lExpCount=0) then lExpCount:=1; end if;
-            if (lExpCount > 0 and abs(lDiff)*100/lExpCount > lLower) then
-               lRetValue := -1;
-            end if;
-         elsif (abs(lDiff) > lLower) then  -- absolute check
-            lRetValue := -1;
-         end if;
-      end if;       
-   end if;
-
-   ----------------------------------------------
-   -- Only do this if the lower-check did not uncover
-   -- any issues.
-   ----------------------------------------------
-   DEBUG(lName||': Upper_unit='||lUpper_unit||' lDiff='||lDiff);
-   if (lRetValue = 0 and lUpper >= 0 and lDiff >= 0) then
-      if (lUpper_unit in ('procent','absolute')) then
-         if lUpper_unit in ('procent') then
-            DEBUG(lName||': Procent='||lDiff*100/lExpCount);
-            if (lExpCount=0) then lExpCount:=1; end if;
-            if (lExpCount > 0 and lDiff*100/lExpCount > lUpper) then
-               lRetValue := 1;
-            end if;
-         elsif (lDiff > lUpper) then  -- absolute check
-            lRetValue := 1;
-         end if;
-      end if;
-   end if;
-   return lRetValue;
-EXCEPTION_BLOCK
-   when no_data_found then
-      DEBUG('logging '||lName);
-      LOG(1,'No epsilon data found for '||coalesce(lName,'Name is null'));
-      return null;
-   THROW_EXCEPTION_HANDLER;
+      ----------------------------------------------
+      -- Only do this if the lower-check did not uncover
+      -- any issues.
+      ----------------------------------------------
+      DEBUG(@lName+': Upper_unit='+@lUpper_unit+' lDiff='+@lDiff);
+      if (@lRetValue = 0 and @lUpper >= 0 and @lDiff >= 0)
+      begin
+         if (@lUpper_unit in ('procent','absolute'))
+         begin
+            if @lUpper_unit in ('procent')
+            begin
+               DEBUG(@lName+': Procent='+@lDiff*100/@lExpCount);
+               if (@lExpCount=0) set @lExpCount=1;
+               if (@lExpCount > 0 and @lDiff*100/@lExpCount > @lUpper)
+               begin
+                  set @lRetValue = 1;
+               end;
+            end
+            else if (@lDiff > @lUpper)  -- absolute check
+            begin
+              set @lRetValue = 1;
+            end;
+         end;
+      end;
+      return @lRetValue;
+  -- E-XCEPTION
+         DEBUG('logging '+@lName);
+         LOG(1,'No epsilon data found for '+coalesce(@lName,'Name is null'));
+         return null;
+      --T HROW_EXCEPTION_HANDLER;
+   --E ND_EXCEPTION;
 END_CREATE_FUNCTION;
