@@ -1,8 +1,7 @@
-CREATE_TRIGGER(taud_{table_name})
-  before insert or update
-  on {table_name}
-  for each row
-declare
+CREATE_TRIGGER(SCHEMA.taud_{table_name})
+  on SCHEMA.{table_name}
+  after insert, update
+  as
 /*****************************************************************
 * Audit trigger
 *  Package Info
@@ -17,51 +16,86 @@ declare
 *   Copyright       : $Equinor ASA: $
 *****************************************************************
 * Description
-*  Maintains the create and update columns in the table.
+* Template created by: JOTHOR
+* Maintains the create and update columns in the table.
 *
 * Could extend auditing by including 
-*  os-user (255 char) -  sys_context('userenv','os_user')
-*  os-host (128 char) -  sys_context('userenv','host')
+*  os-user (255 char)
 * Why? ths "user" is not always the actual user. Using "os-user" 
 * pinpoint the user who is logged in on the PC. This user may use
-* a common login user (e.g RBAC) thereby camouflaging their identify.
+* a common login user thereby camouflaging their identify.
+*
+* Which to utc date to use?
+* https://learn.microsoft.com/en-us/sql/t-sql/functions/getutcdate-transact-sql?view=sql-server-ver17
 *****************************************************************
 * Log
 * Date   Description                                     Done by
 * 170812 Illegal to alter "create" information once data JOTHOR
 *  has been entered.
 *****************************************************************/
-  DECLARE_VARIABLE;
 begin
-   ---------------------------------------------------------
-   -- https://www.oracletutorial.com/oracle-date-functions/
-   -- systimestamp - Return the System date and time that 
-   --   includes fractional seconds and time zone.
-   -- current_timestamp - Return the current date and time
-   --   with time zone in the Session time zone
-   ---------------------------------------------------------
-  if (inserting) then
-    :new.st_created_by   := user;
-    :new.st_created_date := sys_extract_utc(systimestamp);
-    :new.st_updated_by   := null;
-    :new.st_updated_date := null;
-  elsif (updating) then
-    if (:new.st_created_by is null or :new.st_created_by <> :old.st_created_by) then
-       USERERROR(19,'st_created_by','XUSER');
-    elsif (:new.st_created_date is null or :new.st_created_date <> :old.st_created_date) then
-       USERERROR(19,'st_created_date','XUSER');
-    elsif (:old.st_updated_date is null and :new.st_updated_date is null) then
-       null; -- ok, this handles the first time the row is updated.
-    elsif (:new.st_updated_date is null) then
-       USERERROR(11,'st_updated_date','XUSER');  -- must supply
-    elsif (:new.st_updated_date <> :old.st_updated_date) then
-       USERERROR(19,'st_updated_date','XUSER');
-    end if;
-
-    :new.st_updated_by := user;
-    :new.st_updated_date := sys_extract_utc(systimestamp);
-  end if;
-  
-  EXCEPTION_BLOCK
-     THROW_EXCEPTION_HANDLER;
+      if (rowcount_big() = 0)
+         return;
+      
+      set nocount on;
+      STANDARD_VARIABLE;
+      ---------------------------------------------------------
+      -- Update: Illegal to alter st_created_by and st_created_date.
+      -- If actor attempts to alter st_updated_by and/or st_updated_date,
+      -- these will be overwritten regardless. 
+      -- There is code to flag if actor attempts to set these values,
+      -- but currently not engaged
+      ---------------------------------------------------------
+      BEGIN_EXCEPTION
+         if (IS_TRG_INSERTING) 
+         begin
+            update SCHEMA.{table_name}
+               set st_created_by   = suser_sname()
+                  ,st_created_date = sysutcdatetime()
+                  ,st_updated_by   = null
+                  ,st_updated_date = null
+               where st_id in (select st_id from inserted);
+         end
+         else if (IS_TRG_UPDATING) 
+         begin
+            /*
+            ------------------------------------------------------------
+            -- Not engaging this error checking as uncertain how exception
+            -- handling shall be handled. Shall the trigger rollback (see
+            -- macro "create_method" and the macro setting "mcr_trans_off".
+            -- Till further notice, the attributes st_created_by and
+            -- st_created_date will be reset to original values and no
+            -- notification will be given to actor activiating the trigger.
+            ------------------------------------------------------------
+            if exists(select 1 from inserted i
+                   inner join deleted d
+                   on i.st_id = d.st_id
+                   and i.st_created_by != d.st_created_by
+                     )
+            begin
+               USERERROR(19,'st_created_by','XUSER');
+            end
+            else if exists(select 1 from inserted i
+                   inner join deleted d
+                   on i.st_id = d.st_id
+                   and i.st_created_date != d.st_created_date
+                   )
+            begin
+               USERERROR(19,'st_created_date','XUSER');
+            end
+            */
+            
+            -- Fetching original create info from deleted table.
+            update SCHEMA.{table_name}
+               set st_created_by   = d.st_created_by 
+                  ,st_created_date = d.st_created_date
+                  ,st_updated_by   = suser_sname()
+                  ,st_updated_date = sysutcdatetime()
+               from deleted d
+                  where SCHEMA.test.st_id = d.st_id;
+         end;
+   EXCEPTION
+      rollback;
+      THROW_EXCEPTION_HANDLER;
+   END_EXCEPTION
 END_TRIGGER;
