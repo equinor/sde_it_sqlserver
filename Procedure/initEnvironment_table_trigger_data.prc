@@ -601,6 +601,18 @@ begin
      Table (1)procurement_exp violates Arc constraint on Table (2)procurement - discriminator column (3)procurement_type doesn''t have value (4)''EXP''.');
 */     
 end;
+
+--=========================================================
+-- Load errormessages into
+--=========================================================
+
+
+
+/*
+--=========================================================
+-- Oracle related code. Retained for historicale reasons.
+--=========================================================
+
 -----------------------------------------------------------------------
 -- SMTP_SERVER_OUT mailhost.statoil.no
 -- SMTP_PORT_OUT defaults are amongst others: 25, 465, 587, 2525
@@ -622,16 +634,13 @@ begin
 end;
 
 
-
-/*
-
 --***************************************************************
 -- Initiate jobs (Oracle code)
 -- to_date('04.11.2008 18:00:00','dd/mm/yyyy hh24:mi:ss')
 --***************************************************************
 set define on
 set feed on
-define lJobName = '/*cleanup userlogs*/FRAMEWORK_SCHEMA.CleanupLogTable;';
+define lJobName = '/ *cleanup userlogs* /FRAMEWORK_SCHEMA.CleanupLogTable;';
 
 declare
   cursor cur_job 
@@ -663,7 +672,7 @@ end;
 go
 commit;
 
-/*define lJobName = '/ *cleanup userlogs* /FRAMEWORK_SCHEMA.cleanupTableLockHist;';
+/ *define lJobName = '/ *cleanup userlogs* /FRAMEWORK_SCHEMA.cleanupTableLockHist;';
 
 --declare
   cursor cur_job 
@@ -694,7 +703,7 @@ begin
 --end;
 --/
 --commit;
-*/
+* /
 
 DECLARE
   X NUMBER;
@@ -710,11 +719,16 @@ BEGIN
   COMMIT;
 END;
 
-
 prompt --> Consider activating scheduled jobs. See under directory Job
 prompt --> Example. Job/ScheduledJob-Log_client_version.sql
 prompt -->   This is used to populate table CLIENT_VERSION.
 set feed off
 set define off
+
+--=========================================================
+-- End of Oracle related code. Retained for historicale reasons.
+--=========================================================
+
+
 */
 

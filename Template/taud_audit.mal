@@ -36,7 +36,9 @@ CREATE_TRIGGER(SCHEMA.taud_{table_name})
 begin
       if (rowcount_big() = 0)
          return;
-      
+      if TRIGGER_NESTLEVEL() > 1
+         return
+         
       set nocount on;
       STANDARD_VARIABLE;
       ---------------------------------------------------------
@@ -92,10 +94,9 @@ begin
                   ,st_updated_by   = suser_sname()
                   ,st_updated_date = sysutcdatetime()
                from deleted d
-                  where SCHEMA.test.st_id = d.st_id;
+                  where SCHEMA.{table_name}.st_id = d.st_id;
          end;
    EXCEPTION
-      rollback;
       THROW_EXCEPTION_HANDLER;
    END_EXCEPTION
 END_TRIGGER;

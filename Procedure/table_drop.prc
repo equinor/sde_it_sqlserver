@@ -1,10 +1,12 @@
-CREATE_PROCEDURE(SCHEMA.table_drop_constraint)(lSchema nvarchar(120),lTable nvarchar(120))
+CREATE_PROCEDURE(SCHEMA.table_drop)(
+    @lSchema nvarchar(120)
+   ,@lTable nvarchar(120))
   --with execute as { CALLER | SELF | OWNER | 'user_name' } 
 as
 /*****************************************************************
 * Procedure Info
 * Author          : $Author: JOTHOR $
-* Original Date   : $Date: 27.08.2025 $
+* Original Date   : $Date: 05.02.2026 $
 * Last Modified   : $Modtime: $
 * Archive Name    : $Archive: GITHUB $
 * Description     :  $
@@ -55,9 +57,34 @@ as
 * Date   Description					 Done by
 *
 *****************************************************************/
-  STANDARD_VARIABLE;
-BEGIN_EXCEPTION
-   print('Work in progress on developing code.');
-EXCEPTION
-   STD_EXCEPTION_HANDLER;
+begin
+   STANDARD_VARIABLE;
+NOT Tested   
+   declare @lSql nvarchar(500);
+   declare @lFQN nvarchar(300); -- fully qualified name
+   set @lFQN = @lSchema + '.' +@lTable;
+
+   BEGIN_EXCEPTION
+      DEBUG(N'Processing object "' + @lFQN + '".');
+       --exec sp_executesql @lSql;
+      ---------------------------------------
+      -- Drop associated constraints.
+      ---------------------------------------
+      select @lSql += 'alter table' + @lSchema + '.'
+            + quotename(object_name(parent_object_id))
+                ' drop constraint ' + quotename(@lTable) 
+            + '; '
+         from sys.foreign_keys
+         where referenced_object_id = object_id(@lTable);
+      exec sp_executesql @lSql;
+      
+      ---------------------------------------
+      -- Drop table
+      ---------------------------------------
+      set @lSql = 'drop table if exists ' + @lFQN;
+      exec sp_executesql @lSql;
+    --commit;
+   EXCEPTION
+      STD_EXCEPTION_HANDLER;
+   END_EXCEPTION
 END_CREATE_PROCEDURE;

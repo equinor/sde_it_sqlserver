@@ -39,6 +39,11 @@ declare
 *****************************************************************/
   STANDARD_VARIABLE;
 begin
+   if (rowcount_big() = 0)
+      return;
+   if TRIGGER_NESTLEVEL() > 1
+      return
+
    if (inserting) then
       :new.st_id := seq_epds_global.nextval;
 	   :new.guid := sys_guid();

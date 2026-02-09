@@ -1,15 +1,15 @@
-CREATE_PROCEDURE(xxx)
+CREATE_PROCEDURE(SCHEMA.xxx)
 --with execute ???
 --with execute as owner
 as
 /*****************************************************************
 *  Procedure Info
-*   Author        : $Author: JOTHOR $
-*   Original Date   : $Date: 2020/08/24 $
+*   Author          : $Author:  $
+*   Original Date   : $Date:  $
 *   Last Modified   : $Modtime: $
 *   Archive Name    : $Archive: $
-*   Description     : $Header: JOTHOR Exp $
-*   Revision History: $Revision: 1.4 $
+*   Description     : $Header:  $
+*   Revision History: $Revision: 1.0 $
 *   Tag name        : $Name:  $
 *   Workfile        : $Workfile: $
 *****************************************************************
@@ -27,8 +27,10 @@ begin
    set nocount on;
   
    BEGIN_EXCEPTION
-   COMMIT_TRANSACTION;
-  
-   EXCEPTION_BLOCK
+      BEGIN_TRANSACTION
+         COMMIT;
+      END_TRANSACTION;
+   EXCEPTION
       STD_EXCEPTION_HANDLER;
+   END_EXCEPTION;    
 END_CREATE_PROCEDURE;

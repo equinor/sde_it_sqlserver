@@ -25,6 +25,14 @@ declare
    lDiscriminatorValue varchar2(10);
    lDesiredValue varchar2(50) := 'xxxx':  -- supply correct value here.
 begin
+   if (rowcount_big() = 0)
+      return;
+   if TRIGGER_NESTLEVEL() > 1
+      return
+      
+   set nocount on;
+   STANDARD_VARIABLE;
+   
    --------------------------------------------------------
    -- 1) Adjust to correct table and discriminator column
    -- 2) Also adjust the values (2) and (3) in the usererror statement.

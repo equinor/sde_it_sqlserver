@@ -1,6 +1,6 @@
-CREATE_TRIGGER(tv_{view_table_name})
+CREATE_TRIGGER(tv_{table_name})
    instead of insert or update or delete 
-   on {view_table_name}
+   on {table_name}
 /*****************************************************************
 *  Package Info
 *   Author          : $Author:  $
@@ -22,11 +22,17 @@ CREATE_TRIGGER(tv_{view_table_name})
 * Date   Description                                        Done by
 *
 *****************************************************************/
-declare
-   STANDARD_VARIABLE;
-   lxxxId integer := null;
-   lCount integer := 0;
 begin
+   if (rowcount_big() = 0)
+      return;
+   if TRIGGER_NESTLEVEL() > 1
+      return
+      
+   set nocount on;
+   STANDARD_VARIABLE;
+   declare @lxxxId integer = null
+       ,@lCount integer = 0;
+   
    if (inserting or updating) then
       select st_id into lxxxId
          from {yyy_table_name}
