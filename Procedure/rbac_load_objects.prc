@@ -145,7 +145,7 @@ DEBUG_END
      
    if @lDB_st_id is null
    begin
-      USERERROR(12,'database name '+@lDatabase_name)
+      USERERROR(12,'database name '+@lDatabase_name);
    end;
 
    select @lSchema_st_id=st_id
@@ -156,9 +156,9 @@ DEBUG_END
       
    if @lSchema_st_id is null
    begin
-      USERERROR(12,'schema name '+@lSchema_name)
+      USERERROR(12,'schema name '+@lSchema_name);
    end;  
-DEBUG_START   
+DEBUG_START 
    DEBUG(N' @lDB_st_id is  '+ cast(@lDB_st_id as nvarchar(10)));
    DEBUG('@lSchema_name '+ @lSchema_name+'.');   
    DEBUG(N' @lSchema_st_id is  '+ cast(@lSchema_st_id as nvarchar(10)));

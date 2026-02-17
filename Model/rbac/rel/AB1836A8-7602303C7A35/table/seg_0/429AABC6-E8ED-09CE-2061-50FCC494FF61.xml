@@ -1,0 +1,193 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<Table class="oracle.dbtools.crest.model.design.relational.Table" directorySegmentName="seg_0" id="429AABC6-E8ED-09CE-2061-50FCC494FF61" name="xrole">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-02-03 09:17:45 UTC</createdTime>
+<generatorID>3A4C1AF1-97D5-66EA-3601-083D080EA263</generatorID>
+<ownerDesignName>rbac</ownerDesignName>
+<allowColumnReorder>false</allowColumnReorder>
+<existDependencyGenerateInDDl>true</existDependencyGenerateInDDl>
+<parsed>true</parsed>
+<columns itemClass="oracle.dbtools.crest.model.design.relational.Column">
+<Column name="st_created_by" id="C16DB6E6-C975-0251-A4EB-6C96F87EA1E7">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-02-03 09:17:45 UTC</createdTime>
+<generatorID>E580D813-E7D0-0700-9035-ED758C398320</generatorID>
+<ownerDesignName>rbac</ownerDesignName>
+<constraintName>def_create_by</constraintName>
+<useDomainConstraints>false</useDomainConstraints>
+<use>0</use>
+<logicalDatatype>LOGDT024</logicalDatatype>
+<domain>5C97C043-6587-76CF-7784-192E1FE3A912</domain>
+<defaultValue>&apos;NA&apos;</defaultValue>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="st_created_date" id="99ED2F6C-CC02-F213-BAC8-0029062332CB">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-02-03 09:17:45 UTC</createdTime>
+<generatorID>7B74FF08-7F0B-B461-83E9-65402CA1A692</generatorID>
+<ownerDesignName>rbac</ownerDesignName>
+<constraintName>def_create_date</constraintName>
+<useDomainConstraints>false</useDomainConstraints>
+<use>0</use>
+<logicalDatatype>LOGDT046</logicalDatatype>
+<domain>4599240A-5A8F-21AE-066B-98D25E2724F1</domain>
+<defaultValue>convert(datetime, &apos;1970-01-01&apos;, 102)</defaultValue>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="st_updated_by" id="A93A88A9-1831-EB6D-F591-02B2D847C1A5">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-02-03 09:17:45 UTC</createdTime>
+<generatorID>B84ADEC0-EA70-4DBE-0AD8-834A8B20DDAD</generatorID>
+<ownerDesignName>rbac</ownerDesignName>
+<nullsAllowed>true</nullsAllowed>
+<useDomainConstraints>false</useDomainConstraints>
+<use>0</use>
+<logicalDatatype>LOGDT024</logicalDatatype>
+<domain>2B87FFAB-6119-29F6-D07B-F76180EA2A42</domain>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="st_updated_date" id="28227870-6E55-FCA6-377B-6BC64E89297F">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-02-03 09:17:45 UTC</createdTime>
+<generatorID>38233638-154A-BD98-ABC4-E4BF7DDC946B</generatorID>
+<ownerDesignName>rbac</ownerDesignName>
+<nullsAllowed>true</nullsAllowed>
+<useDomainConstraints>false</useDomainConstraints>
+<use>0</use>
+<logicalDatatype>LOGDT046</logicalDatatype>
+<domain>0645CFD6-CB59-F067-9C19-3692245EA9A2</domain>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="st_id" id="70A9870B-2A81-F958-C2AA-D46F26B6B82D">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-02-03 09:17:45 UTC</createdTime>
+<generatorID>0662FF6C-2AF4-6FC1-8586-AF33925FE7AE</generatorID>
+<ownerDesignName>rbac</ownerDesignName>
+<useDomainConstraints>false</useDomainConstraints>
+<use>0</use>
+<logicalDatatype>LOGDT011</logicalDatatype>
+<domain>452D46C6-A43E-6B20-E125-A941668F1209</domain>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="is_active" id="291936E1-A78F-D849-96B1-D57445E2BA16">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-02-03 09:17:45 UTC</createdTime>
+<generatorID>65AB9878-D3A7-BFD3-4CEC-F5B1AAC26447</generatorID>
+<ownerDesignName>rbac</ownerDesignName>
+<useDomainConstraints>false</useDomainConstraints>
+<use>0</use>
+<logicalDatatype>LOGDT025</logicalDatatype>
+<domain>F7F5960D-C029-FFE2-5CD0-9485BB6EEFF9</domain>
+<defaultValue>&apos;Y&apos;</defaultValue>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="name" id="245A90DD-454F-0B00-969D-18DF2BF05639">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-02-03 09:17:45 UTC</createdTime>
+<generatorID>5ECBBA0A-2F87-84F0-3AFD-FF8A4FAC1545</generatorID>
+<ownerDesignName>rbac</ownerDesignName>
+<use>0</use>
+<logicalDatatype>LOGDT024</logicalDatatype>
+<domain>9DE59B8D-973E-CEB6-C00E-99D8D705817B</domain>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="change_date" id="7F584417-7C95-D37A-7AA0-4CE2D6418108">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-02-03 09:17:45 UTC</createdTime>
+<generatorID>A035A8C5-02B7-84DA-6033-518ABFCFBF51</generatorID>
+<ownerDesignName>rbac</ownerDesignName>
+<nullsAllowed>true</nullsAllowed>
+<useDomainConstraints>false</useDomainConstraints>
+<use>0</use>
+<logicalDatatype>LOGDT015</logicalDatatype>
+<domain>AC54AE0B-0A45-B236-43D9-9511DD4AD6BC</domain>
+<defaultValue>convert(datetime, &apos;1970-01-01&apos;, 102)</defaultValue>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="deploy_date" id="9CE19371-5638-0A8A-1D0B-FD5202A19977">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-02-03 09:17:45 UTC</createdTime>
+<generatorID>2905B8C4-BAC5-C5CD-FC70-AA5F6B1438A1</generatorID>
+<ownerDesignName>rbac</ownerDesignName>
+<nullsAllowed>true</nullsAllowed>
+<useDomainConstraints>false</useDomainConstraints>
+<use>0</use>
+<logicalDatatype>LOGDT015</logicalDatatype>
+<domain>AC54AE0B-0A45-B236-43D9-9511DD4AD6BC</domain>
+<defaultValue>convert(datetime, &apos;1970-01-01&apos;, 102)</defaultValue>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="parent_st_id" id="23843A3F-E5B5-1BDE-65DB-2A95C69BD05D">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-02-03 09:17:45 UTC</createdTime>
+<generatorID>7360A13E-B647-F7E0-1CDD-3F74456099BA</generatorID>
+<ownerDesignName>rbac</ownerDesignName>
+<nullsAllowed>true</nullsAllowed>
+<use>0</use>
+<logicalDatatype>LOGDT011</logicalDatatype>
+<domain>452D46C6-A43E-6B20-E125-A941668F1209</domain>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<previousColumn>false</previousColumn>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="xrole_name" id="44CD3D2D-4D02-C61A-D0AF-938C8991DE00">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-02-03 09:19:04 UTC</createdTime>
+<ownerDesignName>rbac</ownerDesignName>
+<use>0</use>
+<logicalDatatype>LOGDT024</logicalDatatype>
+<domain>9DE59B8D-973E-CEB6-C00E-99D8D705817B</domain>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<previousColumn>false</previousColumn>
+<autoIncrementCycle>false</autoIncrementCycle>
+<associations>
+<colAssociation fkAssociation="F37559B9-DC65-5FE4-3EC2-AA197F59F90B" referredColumn="245A90DD-454F-0B00-969D-18DF2BF05639"/>
+</associations>
+</Column>
+</columns>
+<indexes itemClass="oracle.dbtools.crest.model.design.relational.Index">
+<ind_PK_UK id="45B2B382-3F63-C35E-B593-BCB6237BF628" name="xrole_PK">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-02-03 09:17:45 UTC</createdTime>
+<generatorID>85AE633C-AA83-CBCC-A9B7-9759E1ED5AC2</generatorID>
+<ownerDesignName>rbac</ownerDesignName>
+<pk>true</pk>
+<indexState>Primary Constraint</indexState>
+<isSurrogateKey>false</isSurrogateKey>
+<indexColumnUsage>
+<colUsage columnID="70A9870B-2A81-F958-C2AA-D46F26B6B82D"/>
+</indexColumnUsage>
+</ind_PK_UK>
+<ind_PK_UK id="2E7AF116-ECD6-538D-EB5E-DE7A88E6646A" name="xrole_name_UN">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-02-03 09:17:45 UTC</createdTime>
+<generatorID>860898EB-D721-C091-821D-55BC0CD5F8D1</generatorID>
+<ownerDesignName>rbac</ownerDesignName>
+<indexState>Unique Constraint</indexState>
+<isSurrogateKey>false</isSurrogateKey>
+<indexColumnUsage>
+<colUsage columnID="245A90DD-454F-0B00-969D-18DF2BF05639"/>
+</indexColumnUsage>
+</ind_PK_UK>
+<ind_PK_UK id="B3AB23AB-0F7F-272C-64BB-1675C50ED08D" name="xrole_xrole_FK">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-02-03 09:17:45 UTC</createdTime>
+<generatorID>CAEB10C2-6D85-7897-5828-0FD5C2A35342</generatorID>
+<ownerDesignName>rbac</ownerDesignName>
+<indexState>Foreign Key</indexState>
+<isSurrogateKey>false</isSurrogateKey>
+<indexColumnUsage>
+<colUsage columnID="44CD3D2D-4D02-C61A-D0AF-938C8991DE00"/>
+</indexColumnUsage>
+</ind_PK_UK>
+</indexes>
+</Table>

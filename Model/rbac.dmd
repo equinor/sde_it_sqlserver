@@ -1,0 +1,8 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<OSDM_Design class="oracle.dbtools.crest.model.design.Design" name="rbac" id="E8AE3D9D-702C-4334-605B-8A3E157AFAEE" version="3.5">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-01-30 11:28:21 UTC</createdTime>
+<ownerDesignName>rbac</ownerDesignName>
+<capitalNames>false</capitalNames>
+<designId>E8AE3D9D-702C-4334-605B-8A3E157AFAEE</designId>
+</OSDM_Design>

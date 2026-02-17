@@ -1,0 +1,219 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<Table class="oracle.dbtools.crest.model.design.relational.Table" directorySegmentName="seg_0" id="DEA7D3AD-EEBC-E5B1-93AA-882806E132BA" name="legal_permission">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-02-03 09:17:45 UTC</createdTime>
+<generatorID>9E006418-16CE-12B3-6953-FC9DCBD4C9B7</generatorID>
+<ownerDesignName>rbac</ownerDesignName>
+<allowColumnReorder>false</allowColumnReorder>
+<existDependencyGenerateInDDl>true</existDependencyGenerateInDDl>
+<parsed>true</parsed>
+<columns itemClass="oracle.dbtools.crest.model.design.relational.Column">
+<Column name="st_created_by" id="72F1B841-C75B-76B7-10C6-3449073EE058">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-02-03 09:17:45 UTC</createdTime>
+<generatorID>E580D813-E7D0-0700-9035-ED758C398320</generatorID>
+<ownerDesignName>rbac</ownerDesignName>
+<constraintName>def_create_by</constraintName>
+<useDomainConstraints>false</useDomainConstraints>
+<use>0</use>
+<logicalDatatype>LOGDT024</logicalDatatype>
+<domain>5C97C043-6587-76CF-7784-192E1FE3A912</domain>
+<defaultValue>&apos;NA&apos;</defaultValue>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="st_created_date" id="0281CDBC-1D2A-2C6B-C76E-57DB47AB5441">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-02-03 09:17:45 UTC</createdTime>
+<generatorID>7B74FF08-7F0B-B461-83E9-65402CA1A692</generatorID>
+<ownerDesignName>rbac</ownerDesignName>
+<constraintName>def_create_date</constraintName>
+<useDomainConstraints>false</useDomainConstraints>
+<use>0</use>
+<logicalDatatype>LOGDT046</logicalDatatype>
+<domain>4599240A-5A8F-21AE-066B-98D25E2724F1</domain>
+<defaultValue>convert(datetime, &apos;1970-01-01&apos;, 102)</defaultValue>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="st_updated_by" id="AAE7364A-7A6E-1F07-5663-EE0E87EA2A7E">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-02-03 09:17:45 UTC</createdTime>
+<generatorID>B84ADEC0-EA70-4DBE-0AD8-834A8B20DDAD</generatorID>
+<ownerDesignName>rbac</ownerDesignName>
+<nullsAllowed>true</nullsAllowed>
+<useDomainConstraints>false</useDomainConstraints>
+<use>0</use>
+<logicalDatatype>LOGDT024</logicalDatatype>
+<domain>2B87FFAB-6119-29F6-D07B-F76180EA2A42</domain>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="st_updated_date" id="2505B9EB-ABBE-F1D1-6670-FA2FBE635F92">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-02-03 09:17:45 UTC</createdTime>
+<generatorID>38233638-154A-BD98-ABC4-E4BF7DDC946B</generatorID>
+<ownerDesignName>rbac</ownerDesignName>
+<nullsAllowed>true</nullsAllowed>
+<useDomainConstraints>false</useDomainConstraints>
+<use>0</use>
+<logicalDatatype>LOGDT046</logicalDatatype>
+<domain>0645CFD6-CB59-F067-9C19-3692245EA9A2</domain>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="st_id" id="2C94F37F-F5B4-BFC4-81EA-21670B1F4EF0">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-02-03 09:17:45 UTC</createdTime>
+<generatorID>0662FF6C-2AF4-6FC1-8586-AF33925FE7AE</generatorID>
+<ownerDesignName>rbac</ownerDesignName>
+<useDomainConstraints>false</useDomainConstraints>
+<use>0</use>
+<logicalDatatype>LOGDT011</logicalDatatype>
+<domain>452D46C6-A43E-6B20-E125-A941668F1209</domain>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="is_active" id="32FFFE9C-3690-1EFD-E99E-864179601B20">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-02-03 09:17:45 UTC</createdTime>
+<generatorID>65AB9878-D3A7-BFD3-4CEC-F5B1AAC26447</generatorID>
+<ownerDesignName>rbac</ownerDesignName>
+<useDomainConstraints>false</useDomainConstraints>
+<use>0</use>
+<logicalDatatype>LOGDT025</logicalDatatype>
+<domain>F7F5960D-C029-FFE2-5CD0-9485BB6EEFF9</domain>
+<defaultValue>&apos;Y&apos;</defaultValue>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="data_type" id="70F22BFD-4E6A-17F9-07C2-DF12CEDF0EB7">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-02-03 09:17:45 UTC</createdTime>
+<generatorID>71DB342F-C364-9B3B-3F93-471B3EEC9788</generatorID>
+<ownerDesignName>rbac</ownerDesignName>
+<nullsAllowed>true</nullsAllowed>
+<use>0</use>
+<logicalDatatype>LOGDT024</logicalDatatype>
+<domain>9DE59B8D-973E-CEB6-C00E-99D8D705817B</domain>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="xselect" id="DD4AFF67-C46F-A57B-A12D-4A7F994B5475">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-02-03 09:17:45 UTC</createdTime>
+<generatorID>24096985-95FC-85A7-85D7-30C903521C52</generatorID>
+<ownerDesignName>rbac</ownerDesignName>
+<nullsAllowed>true</nullsAllowed>
+<use>0</use>
+<logicalDatatype>LOGDT025</logicalDatatype>
+<domain>F7F5960D-C029-FFE2-5CD0-9485BB6EEFF9</domain>
+<defaultValue>&apos;N&apos;</defaultValue>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="xupdate" id="EFCE1150-6949-2BF1-1AD9-A7FE67F17822">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-02-03 09:17:45 UTC</createdTime>
+<generatorID>12DB5123-27E0-5E28-EC45-C226579B1425</generatorID>
+<ownerDesignName>rbac</ownerDesignName>
+<nullsAllowed>true</nullsAllowed>
+<use>0</use>
+<logicalDatatype>LOGDT025</logicalDatatype>
+<domain>F7F5960D-C029-FFE2-5CD0-9485BB6EEFF9</domain>
+<defaultValue>&apos;N&apos;</defaultValue>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="xinsert" id="37445B88-8187-DCE4-1546-EE834C91C3BD">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-02-03 09:17:45 UTC</createdTime>
+<generatorID>E2BDD6BD-2E45-5A0D-608C-A06C2BB78E99</generatorID>
+<ownerDesignName>rbac</ownerDesignName>
+<nullsAllowed>true</nullsAllowed>
+<use>0</use>
+<logicalDatatype>LOGDT025</logicalDatatype>
+<domain>F7F5960D-C029-FFE2-5CD0-9485BB6EEFF9</domain>
+<defaultValue>&apos;N&apos;</defaultValue>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="xdelete" id="EE0D5257-B4C5-B011-3BC3-24D554C65F0F">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-02-03 09:17:45 UTC</createdTime>
+<generatorID>89C5429A-56CE-B395-A67D-D6B4C52AABB0</generatorID>
+<ownerDesignName>rbac</ownerDesignName>
+<nullsAllowed>true</nullsAllowed>
+<use>0</use>
+<logicalDatatype>LOGDT025</logicalDatatype>
+<domain>F7F5960D-C029-FFE2-5CD0-9485BB6EEFF9</domain>
+<defaultValue>&apos;N&apos;</defaultValue>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="xexecute" id="8F382A38-7B1A-D8E9-7029-6D4198632627">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-02-03 09:17:45 UTC</createdTime>
+<generatorID>0396120C-8F6C-A512-6074-1092E167730F</generatorID>
+<ownerDesignName>rbac</ownerDesignName>
+<nullsAllowed>true</nullsAllowed>
+<use>0</use>
+<logicalDatatype>LOGDT025</logicalDatatype>
+<domain>F7F5960D-C029-FFE2-5CD0-9485BB6EEFF9</domain>
+<defaultValue>&apos;N&apos;</defaultValue>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="xcreate" id="A6145E04-EF59-6DD7-5DB6-F70C2F9C1D2E">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-02-03 09:17:45 UTC</createdTime>
+<generatorID>05AECA83-E08A-1640-758A-0A082F30AC67</generatorID>
+<ownerDesignName>rbac</ownerDesignName>
+<nullsAllowed>true</nullsAllowed>
+<use>0</use>
+<logicalDatatype>LOGDT025</logicalDatatype>
+<domain>F7F5960D-C029-FFE2-5CD0-9485BB6EEFF9</domain>
+<defaultValue>&apos;N&apos;</defaultValue>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+<Column name="xdrop" id="30A19683-674D-6AE4-427C-FC260556BA18">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-02-03 09:17:45 UTC</createdTime>
+<generatorID>B7F31FF0-8C15-8E9D-9E13-EA4F8D3ED122</generatorID>
+<ownerDesignName>rbac</ownerDesignName>
+<nullsAllowed>true</nullsAllowed>
+<use>0</use>
+<logicalDatatype>LOGDT025</logicalDatatype>
+<domain>F7F5960D-C029-FFE2-5CD0-9485BB6EEFF9</domain>
+<defaultValue>&apos;N&apos;</defaultValue>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
+</columns>
+<indexes itemClass="oracle.dbtools.crest.model.design.relational.Index">
+<ind_PK_UK id="D5E4B098-4D07-6945-5A05-441C913937B5" name="legal_permission_PK">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-02-03 09:17:45 UTC</createdTime>
+<generatorID>85AE633C-AA83-CBCC-A9B7-9759E1ED5AC2</generatorID>
+<ownerDesignName>rbac</ownerDesignName>
+<pk>true</pk>
+<indexState>Primary Constraint</indexState>
+<isSurrogateKey>false</isSurrogateKey>
+<indexColumnUsage>
+<colUsage columnID="2C94F37F-F5B4-BFC4-81EA-21670B1F4EF0"/>
+</indexColumnUsage>
+</ind_PK_UK>
+<ind_PK_UK id="40130934-7B1B-509B-65BE-5B4DA9D1205A" name="legal_permission_data_type_UN">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-02-03 09:17:45 UTC</createdTime>
+<generatorID>D7454827-125B-8A3C-8881-AABADF0FEEC1</generatorID>
+<ownerDesignName>rbac</ownerDesignName>
+<indexState>Unique Constraint</indexState>
+<isSurrogateKey>false</isSurrogateKey>
+<indexColumnUsage>
+<colUsage columnID="70F22BFD-4E6A-17F9-07C2-DF12CEDF0EB7"/>
+</indexColumnUsage>
+</ind_PK_UK>
+</indexes>
+</Table>
