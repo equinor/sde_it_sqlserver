@@ -1,5 +1,5 @@
 <?xml version = '1.0' encoding = 'UTF-8'?>
-<Entity class="oracle.dbtools.crest.model.design.logical.Entity" directorySegmentName="seg_0" id="7A131863-6B95-D45D-5224-B9D9CA9E61F2" name="xpermission">
+<Entity class="oracle.dbtools.crest.model.design.logical.Entity" directorySegmentName="seg_0" id="7A131863-6B95-D45D-5224-B9D9CA9E61F2" name="rbac_permission">
 <createdBy>JOTHOR</createdBy>
 <createdTime>2026-01-30 11:55:20 UTC</createdTime>
 <ownerDesignName>rbac</ownerDesignName>
@@ -160,6 +160,34 @@
 <Attribute name="xdrop" id="66CF359B-FB42-A876-06AB-51D9C262F703">
 <createdBy>JOTHOR</createdBy>
 <createdTime>2026-01-30 12:20:19 UTC</createdTime>
+<ownerDesignName>rbac</ownerDesignName>
+<engineerTo>
+<item key="AB1836A8-867F-3E41-6FD1-7602303C7A35" value="true"/>
+</engineerTo>
+<nullsAllowed>true</nullsAllowed>
+<use>0</use>
+<logicalDatatype>LOGDT025</logicalDatatype>
+<domain>F7F5960D-C029-FFE2-5CD0-9485BB6EEFF9</domain>
+<defaultValue>&apos;N&apos;</defaultValue>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="xenable" id="6017C760-9E56-B8BC-7A4E-8E0D6B51B448">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-02-16 09:32:49 UTC</createdTime>
+<ownerDesignName>rbac</ownerDesignName>
+<engineerTo>
+<item key="AB1836A8-867F-3E41-6FD1-7602303C7A35" value="true"/>
+</engineerTo>
+<nullsAllowed>true</nullsAllowed>
+<use>0</use>
+<logicalDatatype>LOGDT025</logicalDatatype>
+<domain>F7F5960D-C029-FFE2-5CD0-9485BB6EEFF9</domain>
+<defaultValue>&apos;N&apos;</defaultValue>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="xdisable" id="0EC448B6-03F7-3BE2-796A-E91A7EF918AB">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-02-16 09:33:02 UTC</createdTime>
 <ownerDesignName>rbac</ownerDesignName>
 <engineerTo>
 <item key="AB1836A8-867F-3E41-6FD1-7602303C7A35" value="true"/>

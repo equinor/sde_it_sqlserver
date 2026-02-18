@@ -92,7 +92,7 @@
 <point x="1012" y="605"/>
 <point x="1012" y="658"/>
 <point x="937" y="658"/>
-<point x="937" y="634"/>
+<point x="937" y="635"/>
 </points>
 </Connector>
 <Connector class="oracle.dbtools.crest.swingui.relational.TVFKRelation" oid="FBE377D8-5C00-4584-91D9-35B463D1568A" otype="FKIndexAssociation" vid_source="0C3FB2DB-C0A7-1D25-F99C-97B7412E77C1" vid_target="C7B8CC6E-C7EE-1C86-DA6D-37402383D38E">

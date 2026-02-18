@@ -1,5 +1,5 @@
 <?xml version = '1.0' encoding = 'UTF-8'?>
-<Entity class="oracle.dbtools.crest.model.design.logical.Entity" directorySegmentName="seg_0" id="3A4C1AF1-97D5-66EA-3601-083D080EA263" name="xrole">
+<Entity class="oracle.dbtools.crest.model.design.logical.Entity" directorySegmentName="seg_0" id="3A4C1AF1-97D5-66EA-3601-083D080EA263" name="rbac_role">
 <createdBy>JOTHOR</createdBy>
 <createdTime>2026-01-30 11:55:36 UTC</createdTime>
 <ownerDesignName>rbac</ownerDesignName>
@@ -85,20 +85,6 @@
 <use>0</use>
 <logicalDatatype>LOGDT011</logicalDatatype>
 <domain>452D46C6-A43E-6B20-E125-A941668F1209</domain>
-<ownDataTypeParameters>,,</ownDataTypeParameters>
-</Attribute>
-<Attribute name="is_system_role1" id="FF685706-E6D1-1FC8-0138-B048B45E6288">
-<createdBy>JOTHOR</createdBy>
-<createdTime>2026-02-13 12:31:34 UTC</createdTime>
-<ownerDesignName>rbac</ownerDesignName>
-<engineerTo>
-<item key="AB1836A8-867F-3E41-6FD1-7602303C7A35" value="true"/>
-</engineerTo>
-<nullsAllowed>true</nullsAllowed>
-<use>0</use>
-<logicalDatatype>LOGDT025</logicalDatatype>
-<domain>F7F5960D-C029-FFE2-5CD0-9485BB6EEFF9</domain>
-<defaultValue>&apos;N&apos;</defaultValue>
 <ownDataTypeParameters>,,</ownDataTypeParameters>
 </Attribute>
 </attributes>

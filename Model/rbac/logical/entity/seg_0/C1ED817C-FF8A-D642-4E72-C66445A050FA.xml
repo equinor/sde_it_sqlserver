@@ -1,5 +1,5 @@
 <?xml version = '1.0' encoding = 'UTF-8'?>
-<Entity class="oracle.dbtools.crest.model.design.logical.Entity" directorySegmentName="seg_0" id="C1ED817C-FF8A-D642-4E72-C66445A050FA" name="xobject">
+<Entity class="oracle.dbtools.crest.model.design.logical.Entity" directorySegmentName="seg_0" id="C1ED817C-FF8A-D642-4E72-C66445A050FA" name="rbac_object">
 <createdBy>JOTHOR</createdBy>
 <createdTime>2026-01-30 11:38:13 UTC</createdTime>
 <commentInRDBMS><![CDATA[Represents objects within a database. Note the parent relationship which is used to associate objects within a "schem".]]></commentInRDBMS>
