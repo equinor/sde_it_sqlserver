@@ -14,8 +14,8 @@ as
 *   Workfile        : $Workfile: $
 *****************************************************************
 * Description
-* In T-SQL, this trigger is equivalent to Oracle after statement.
-* In T-SQL, this trigger is equivalent to Oracle after statement.
+* Use function "convertInteger2Binary_str" to decode result.
+*
 * NOTE: cursor "cur_data" should check object parent id fetching 
 *  schema type and then check valid object types in 
 *  rbac_legal_permission belonging to the parent "schema".

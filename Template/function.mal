@@ -1,5 +1,5 @@
-Do we need this.
-CREATE_FUNCTION(xxx)
+CREATE_FUNCTION(SCHEMA.xxx)
+   returns [datatype etc] 
 --with execute ???
 --with execute as owner
 as
@@ -16,16 +16,18 @@ as
 *   Copyright       : $Equinor ASA: $
 *****************************************************************
 * Description
-*
+* Can not use exception handling
+* Do not engage "set nocount on" as this results in
+*   Invalid use of a side-effecting operator ...."
 *****************************************************************
 * Log
 * Date   Description                                        Done by
 * 280323 Upgraded to Sqlserver                              JOTHOR
 *****************************************************************/
 begin
-  STANDARD_VARIABLE;
-  -- Recommended
-   set nocount on;
+   STANDARD_VARIABLE;
+   -- Recommended
+   -- set nocount on;
    
    open cur;
    while GET_FETCH_STATUS = 0
@@ -33,6 +35,7 @@ begin
    close cur;      
    deallocate cur;
    
+   -- Uncertain if legal 
    BEGIN_TRANSACTION;
       open du_candidates;
       fetch next from bi_candidates into @lObjectId;
@@ -48,7 +51,4 @@ begin
       close bi_candidates;
       deallocate bi_candidates;
    END_TRANSACTION;
-   
-   EXCEPTION_BLOCK
-      STD_EXCEPTION_HANDLER;
 END_CREATE_FUNCTION;
