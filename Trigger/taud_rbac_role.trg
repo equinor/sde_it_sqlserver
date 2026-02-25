@@ -1,5 +1,5 @@
-CREATE_TRIGGER(SCHEMA.taud_xrole)
-  on SCHEMA.xrole
+CREATE_TRIGGER(SCHEMA.taud_rbac_role)
+  on SCHEMA.rbac_role
   after insert, update
   as
 /*****************************************************************
@@ -49,7 +49,7 @@ begin
       BEGIN_EXCEPTION
          if (IS_TRG_INSERTING) 
          begin
-            update SCHEMA.xrole
+            update SCHEMA.rbac_role
                set st_created_by   = suser_sname()
                   ,st_created_date = sysutcdatetime()
                   ,st_updated_by   = null
@@ -86,13 +86,13 @@ begin
             */
             
             -- Fetching original create info from deleted table.
-            update SCHEMA.xrole
+            update SCHEMA.rbac_role
                set st_created_by   = d.st_created_by 
                   ,st_created_date = d.st_created_date
                   ,st_updated_by   = suser_sname()
                   ,st_updated_date = sysutcdatetime()
                from deleted d
-                  where SCHEMA.xrole.st_id = d.st_id;
+                  where SCHEMA.rbac_role.st_id = d.st_id;
          end;
    EXCEPTION
       THROW_EXCEPTION_HANDLER;

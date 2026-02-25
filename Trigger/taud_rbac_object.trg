@@ -1,5 +1,5 @@
-CREATE_TRIGGER(SCHEMA.taud_xpermission)
-  on SCHEMA.xpermission
+CREATE_TRIGGER(SCHEMA.taud_rbac_object)
+  on SCHEMA.rbac_object
   after insert, update
   as
 /*****************************************************************
@@ -34,12 +34,11 @@ CREATE_TRIGGER(SCHEMA.taud_xpermission)
 *  has been entered.
 *****************************************************************/
 begin
-   if (rowcount_big() = 0)
-      return;
-      
-   if TRIGGER_NESTLEVEL() > 1
-      return
-   
+      if (rowcount_big() = 0)
+         return;
+      if TRIGGER_NESTLEVEL() > 1
+         return
+         
       set nocount on;
       STANDARD_VARIABLE;
       ---------------------------------------------------------
@@ -52,7 +51,7 @@ begin
       BEGIN_EXCEPTION
          if (IS_TRG_INSERTING) 
          begin
-            update SCHEMA.xpermission
+            update SCHEMA.rbac_object
                set st_created_by   = suser_sname()
                   ,st_created_date = sysutcdatetime()
                   ,st_updated_by   = null
@@ -89,13 +88,13 @@ begin
             */
             
             -- Fetching original create info from deleted table.
-            update SCHEMA.xpermission
+            update SCHEMA.rbac_object
                set st_created_by   = d.st_created_by 
                   ,st_created_date = d.st_created_date
                   ,st_updated_by   = suser_sname()
                   ,st_updated_date = sysutcdatetime()
                from deleted d
-                  where SCHEMA.xpermission.st_id = d.st_id;
+               where SCHEMA.rbac_object.st_id = d.st_id;
          end;
    EXCEPTION
       THROW_EXCEPTION_HANDLER;

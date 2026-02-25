@@ -1,0 +1,10 @@
+taud_rbac_actor.trg
+taud_rbac_actor_role.trg
+taud_rbac_database.trg
+taud_rbac_legal_permission.trg
+taud_rbac_object.trg
+taud_rbac_permission.trg
+taud_rbac_role.trg
+tiu_rbac_permission.trg
+tiud_rbac_object.trg
+tiud_rbac_role.trg

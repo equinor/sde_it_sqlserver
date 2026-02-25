@@ -16,7 +16,7 @@
 <minVolumes>0</minVolumes>
 <normalForm>Third</normalForm>
 <attributes itemClass="oracle.dbtools.crest.model.design.logical.Attribute">
-<Attribute name="xrole_st_id" id="6E668427-904B-F76E-0C23-A6665C47286C">
+<Attribute name="rbac_role_st_id" id="6E668427-904B-F76E-0C23-A6665C47286C">
 <createdBy>JOTHOR</createdBy>
 <createdTime>2026-01-30 12:00:16 UTC</createdTime>
 <generatorID>D974D33F-5DB6-B917-8604-A66FADEECD17</generatorID>
@@ -30,7 +30,7 @@
 <domain>452D46C6-A43E-6B20-E125-A941668F1209</domain>
 <ownDataTypeParameters>,,</ownDataTypeParameters>
 </Attribute>
-<Attribute name="xobject_st_id" id="AA4DD54D-BDC0-BC5E-898B-4190812FB1FD">
+<Attribute name="rbac_object_st_id" id="AA4DD54D-BDC0-BC5E-898B-4190812FB1FD">
 <createdBy>JOTHOR</createdBy>
 <createdTime>2026-01-30 12:01:00 UTC</createdTime>
 <generatorID>D4B0EE13-CA6B-6534-6D34-92FE2719F5D0</generatorID>
@@ -200,4 +200,19 @@
 <ownDataTypeParameters>,,</ownDataTypeParameters>
 </Attribute>
 </attributes>
+<identifiers itemClass="oracle.dbtools.crest.model.design.logical.CandidateKey">
+<identifier id="D03DB04D-80B1-09F7-96E2-964651ACBA32" name="rbac_permission_unq">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-02-24 11:57:32 UTC</createdTime>
+<ownerDesignName>rbac</ownerDesignName>
+<engineerTo>
+<item key="AB1836A8-867F-3E41-6FD1-7602303C7A35" value="true"/>
+</engineerTo>
+<newElementsIDs>D974D33F-5DB6-B917-8604-A66FADEECD17,D4B0EE13-CA6B-6534-6D34-92FE2719F5D0</newElementsIDs>
+<usedAttributes>
+<attributeRef>6E668427-904B-F76E-0C23-A6665C47286C</attributeRef>
+<attributeRef>AA4DD54D-BDC0-BC5E-898B-4190812FB1FD</attributeRef>
+</usedAttributes>
+</identifier>
+</identifiers>
 </Entity>

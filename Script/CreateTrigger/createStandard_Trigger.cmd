@@ -70,7 +70,7 @@ REM select  DISTINCT TABLE_NAME from user_TAB_COLUMNS where column_name in('DEPL
 set tableList=
 for %%i in (%tableList%) do (
   echo Flags - Processing table: %%i
-  sed -e "s/{table_name}/%%i/g" %xtemplateDir%\Trigger_flag.mal > %xoutputDir%\tflag_%%i.sql
+  sed -e "s/{table_name}/%%i/g" %xtemplateDir%\Trigger_flag.mal > %xoutputDir%\tflag_%%i.trg
 )
 echo Done creating FLAG triggers
 
@@ -89,7 +89,7 @@ REM select  string_agg(table_name||' ') within group (order by table_name) from 
 set tableList=
 for %%i in (%tableList%) do (
   echo ID - Processing table: %%i
-  sed -e "s/{table_name}/%%i/g" %xtemplateDir%\Trigger_id.mal > %xoutputDir%\t_id%%i.sql
+  sed -e "s/{table_name}/%%i/g" %xtemplateDir%\Trigger_id.mal > %xoutputDir%\t_id%%i.trg
 )
 echo Done creating ID triggers
 
@@ -98,10 +98,10 @@ rem Create Audit triggers
 rem ************************************
 echo Creating AUDIT triggers ...
 rem select  string_agg(table_name||' ') within group (order by table_name) from user_TAB_COLUMNS where column_name in('ST_CREATED_BY') order by 1;
-set tableList=actor
+set tableList=
 for %%i in (%tableList%) do (
   echo Audit - Processing table: %%i
-  sed -e "s/{table_name}/%%i/g" %xtemplateDir%\taud_audit.mal > %xoutputDir%\taud_%%i.sql
+  sed -e "s/{table_name}/%%i/g" %xtemplateDir%\taud_audit.mal > %xoutputDir%\taud_%%i.trg
 )
 echo Done creating Audit triggers
 goto le_end 

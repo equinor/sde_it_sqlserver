@@ -59,7 +59,7 @@ as
 *****************************************************************/
 begin
    STANDARD_VARIABLE;
-NOT Tested   
+
    declare @lSql nvarchar(500);
    declare @lFQN nvarchar(300); -- fully qualified name
    set @lFQN = @lSchema + '.' +@lTable;
@@ -72,7 +72,7 @@ NOT Tested
       ---------------------------------------
       select @lSql += 'alter table' + @lSchema + '.'
             + quotename(object_name(parent_object_id))
-                ' drop constraint ' + quotename(@lTable) 
+            + ' drop constraint ' + quotename(@lTable) 
             + '; '
          from sys.foreign_keys
          where referenced_object_id = object_id(@lTable);

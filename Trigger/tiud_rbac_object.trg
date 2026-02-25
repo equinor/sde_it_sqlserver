@@ -1,5 +1,5 @@
-CREATE_TRIGGER(SCHEMA.tiud_xobject)
-  on SCHEMA.xobject
+CREATE_TRIGGER(SCHEMA.tiud_rbac_object)
+  on SCHEMA.rbac_object
   after insert, update , delete
   as
 /*****************************************************************
@@ -39,13 +39,13 @@ begin
    BEGIN_EXCEPTION
       if (IS_TRG_INSERTING) 
       begin
-         update SCHEMA.xobject
-            set xtype  = upper(xtype)
+         update SCHEMA.rbac_object
+            set xtype = upper(xtype)
             where st_id in (select st_id from inserted);
       end
       else if (IS_TRG_UPDATING) 
       begin
-         update SCHEMA.xobject
+         update SCHEMA.rbac_object
             set xtype  = upper(xtype)
             where st_id in (select st_id from inserted);
             
@@ -53,15 +53,18 @@ begin
          -- Deactivation results in updating xpermission.
          -- Reactivation does not affect xpermission.
          -----------------------------------------
-         update SCHEMA.xpermission per
-            set is_active = FALSE_CHAR
-               ,change_date = sysutcdatetime()
-         from inserted ins
-            inner join deleted del
-         where  del.st_id = ins.st_id
-         and del.is_active = TRUE_CHAR
-         and ins.is_active = FALSE_CHAR
-         and per.xobject_st_id = ins.st_id;
+         merge into  SDE_IT.rbac_permission p
+            using (select ins.st_id
+                     from inserted ins
+                     inner join deleted del
+                        on del.st_id = ins.st_id
+                        and del.is_active = TRUE_CHAR
+                        and ins.is_active = FALSE_CHAR
+               )   xd
+            on (p.rbac_object_st_id = xd.st_id)
+            when matched then update 
+               set is_active = FALSE_CHAR
+                  ,change_date = sysutcdatetime();         
       end
       else if (IS_TRG_DELETING) 
       begin
@@ -69,11 +72,11 @@ begin
          -- Deletion results in updating xpermission.
          -- Reactivation does not affect xpermission.
          -----------------------------------------
-         update SCHEMA.xpermission per
+         update SCHEMA.rbac_permission
             set is_active = FALSE_CHAR
                ,change_date = sysutcdatetime()
          from deleted del
-         where per.xobject_st_id = del.st_id;
+         where rbac_object_st_id = del.st_id;
       end;
 
    EXCEPTION

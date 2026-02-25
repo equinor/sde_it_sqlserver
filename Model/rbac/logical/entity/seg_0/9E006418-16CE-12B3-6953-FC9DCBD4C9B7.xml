@@ -127,14 +127,31 @@
 <defaultValue>&apos;N&apos;</defaultValue>
 <ownDataTypeParameters>,,</ownDataTypeParameters>
 </Attribute>
+<Attribute name="parent_st_id" id="9DC54284-AB64-1462-2D5C-2689E1FE193D">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-02-19 06:36:27 UTC</createdTime>
+<commentInRDBMS><![CDATA[An object can have a set of underlying objects. E.g a "schema" is a containter for several object types.]]></commentInRDBMS>
+<generatorID>EA6FA341-AC33-EF52-D38A-918A2727B5EA</generatorID>
+<ownerDesignName>rbac</ownerDesignName>
+<engineerTo>
+<item key="AB1836A8-867F-3E41-6FD1-7602303C7A35" value="true"/>
+</engineerTo>
+<nullsAllowed>true</nullsAllowed>
+<referedAttribute>0662FF6C-2AF4-6FC1-8586-AF33925FE7AE</referedAttribute>
+<use>0</use>
+<logicalDatatype>LOGDT011</logicalDatatype>
+<domain>452D46C6-A43E-6B20-E125-A941668F1209</domain>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
 </attributes>
 <identifiers itemClass="oracle.dbtools.crest.model.design.logical.CandidateKey">
 <identifier id="D7454827-125B-8A3C-8881-AABADF0FEEC1" name="legal_permission_unq">
 <createdBy>JOTHOR</createdBy>
 <createdTime>2026-02-02 11:31:30 UTC</createdTime>
 <ownerDesignName>rbac</ownerDesignName>
+<shouldEngineer>false</shouldEngineer>
 <engineerTo>
-<item key="AB1836A8-867F-3E41-6FD1-7602303C7A35" value="true"/>
+<item key="AB1836A8-867F-3E41-6FD1-7602303C7A35" value="false"/>
 </engineerTo>
 <newElementsIDs>71DB342F-C364-9B3B-3F93-471B3EEC9788</newElementsIDs>
 <usedAttributes>

@@ -1,5 +1,5 @@
-CREATE_TRIGGER(SCHEMA.tiud_xrole)
-  on SCHEMA.xrole
+CREATE_TRIGGER(SCHEMA.tiud_rbac_role)
+  on SCHEMA.rbac_role
   after insert, update, delete
 as
 /*****************************************************************
@@ -54,21 +54,21 @@ begin
 
       if (IS_TRG_INSERTING) 
       begin
-         update SCHEMA.xrole
+         update SCHEMA.rbac_role
             set name  = lower(name)
                ,change_date = sysutcdatetime()
             where st_id in (select st_id from inserted);
       end
       else if (IS_TRG_UPDATING) 
       begin
-         update SCHEMA.xrole
+         update SCHEMA.rbac_role
             set name  = lower(name)
                ,change_date = sysutcdatetime()
             where st_id in (select st_id from inserted);
       end
       else if (IS_TRG_DELETING) 
       begin
-         update SCHEMA.xrole
+         update SCHEMA.rbac_role
             set is_active = FALSE_CHAR
                ,change_date = sysutcdatetime()
             where st_id in (select st_id from deleted);      

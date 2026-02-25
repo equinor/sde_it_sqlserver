@@ -1,5 +1,5 @@
-CREATE_TRIGGER(SCHEMA.taud_actor_role)
-  on SCHEMA.actor_role
+CREATE_TRIGGER(SCHEMA.taud_rbac_legal_permission)
+  on SCHEMA.rbac_legal_permission
   after insert, update
   as
 /*****************************************************************
@@ -36,7 +36,7 @@ CREATE_TRIGGER(SCHEMA.taud_actor_role)
 begin
    if (rowcount_big() = 0)
       return;
-   
+      
    if TRIGGER_NESTLEVEL() > 1
       return
    
@@ -52,7 +52,7 @@ begin
    BEGIN_EXCEPTION
       if (IS_TRG_INSERTING) 
       begin
-         update SCHEMA.actor_role
+         update SCHEMA.rbac_legal_permission
             set st_created_by   = suser_sname()
                ,st_created_date = sysutcdatetime()
                ,st_updated_by   = null
@@ -89,13 +89,13 @@ begin
          */
          
          -- Fetching original create info from deleted table.
-         update SCHEMA.actor_role
+         update SCHEMA.rbac_legal_permission
             set st_created_by   = d.st_created_by 
                ,st_created_date = d.st_created_date
                ,st_updated_by   = suser_sname()
                ,st_updated_date = sysutcdatetime()
             from deleted d
-               where SCHEMA.actor_role.st_id = d.st_id;
+               where SCHEMA.rbac_legal_permission.st_id = d.st_id;
       end;
    EXCEPTION
       THROW_EXCEPTION_HANDLER;
