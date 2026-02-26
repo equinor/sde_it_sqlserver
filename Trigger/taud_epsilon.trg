@@ -32,6 +32,9 @@ as
 begin
    if (rowcount_big() = 0)
          return;
+         
+   if trigger_nestlevel() > 1
+      return
 
    BEGIN_EXCEPTION
       STANDARD_VARIABLE;
