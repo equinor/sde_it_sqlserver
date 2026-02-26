@@ -36,7 +36,8 @@ CREATE_TRIGGER(SCHEMA.taud_{table_name})
 begin
       if (rowcount_big() = 0)
          return;
-      if TRIGGER_NESTLEVEL() > 1
+         
+      if trigger_nestlevel() > 1
          return
          
       set nocount on;
