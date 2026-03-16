@@ -29,6 +29,20 @@
 <domain>9DE59B8D-973E-CEB6-C00E-99D8D705817B</domain>
 <ownDataTypeParameters>,,</ownDataTypeParameters>
 </Attribute>
+<Attribute name="is_spatial" id="F63055F8-BF12-6402-CC18-C1912F7C0FAB">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-02-27 07:10:48 UTC</createdTime>
+<commentInRDBMS><![CDATA[If the datatype is spatial, special considerations must be taken]]></commentInRDBMS>
+<ownerDesignName>rbac</ownerDesignName>
+<engineerTo>
+<item key="AB1836A8-867F-3E41-6FD1-7602303C7A35" value="true"/>
+</engineerTo>
+<use>0</use>
+<logicalDatatype>LOGDT025</logicalDatatype>
+<domain>F7F5960D-C029-FFE2-5CD0-9485BB6EEFF9</domain>
+<defaultValue>&apos;N&apos;</defaultValue>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
 <Attribute name="xselect" id="24096985-95FC-85A7-85D7-30C903521C52">
 <createdBy>JOTHOR</createdBy>
 <createdTime>2026-01-30 11:52:46 UTC</createdTime>
@@ -36,7 +50,6 @@
 <engineerTo>
 <item key="AB1836A8-867F-3E41-6FD1-7602303C7A35" value="true"/>
 </engineerTo>
-<nullsAllowed>true</nullsAllowed>
 <use>0</use>
 <logicalDatatype>LOGDT025</logicalDatatype>
 <domain>F7F5960D-C029-FFE2-5CD0-9485BB6EEFF9</domain>
@@ -50,7 +63,6 @@
 <engineerTo>
 <item key="AB1836A8-867F-3E41-6FD1-7602303C7A35" value="true"/>
 </engineerTo>
-<nullsAllowed>true</nullsAllowed>
 <use>0</use>
 <logicalDatatype>LOGDT025</logicalDatatype>
 <domain>F7F5960D-C029-FFE2-5CD0-9485BB6EEFF9</domain>
@@ -64,7 +76,6 @@
 <engineerTo>
 <item key="AB1836A8-867F-3E41-6FD1-7602303C7A35" value="true"/>
 </engineerTo>
-<nullsAllowed>true</nullsAllowed>
 <use>0</use>
 <logicalDatatype>LOGDT025</logicalDatatype>
 <domain>F7F5960D-C029-FFE2-5CD0-9485BB6EEFF9</domain>
@@ -78,7 +89,6 @@
 <engineerTo>
 <item key="AB1836A8-867F-3E41-6FD1-7602303C7A35" value="true"/>
 </engineerTo>
-<nullsAllowed>true</nullsAllowed>
 <use>0</use>
 <logicalDatatype>LOGDT025</logicalDatatype>
 <domain>F7F5960D-C029-FFE2-5CD0-9485BB6EEFF9</domain>
@@ -92,7 +102,6 @@
 <engineerTo>
 <item key="AB1836A8-867F-3E41-6FD1-7602303C7A35" value="true"/>
 </engineerTo>
-<nullsAllowed>true</nullsAllowed>
 <use>0</use>
 <logicalDatatype>LOGDT025</logicalDatatype>
 <domain>F7F5960D-C029-FFE2-5CD0-9485BB6EEFF9</domain>
@@ -106,7 +115,6 @@
 <engineerTo>
 <item key="AB1836A8-867F-3E41-6FD1-7602303C7A35" value="true"/>
 </engineerTo>
-<nullsAllowed>true</nullsAllowed>
 <use>0</use>
 <logicalDatatype>LOGDT025</logicalDatatype>
 <domain>F7F5960D-C029-FFE2-5CD0-9485BB6EEFF9</domain>
@@ -120,7 +128,32 @@
 <engineerTo>
 <item key="AB1836A8-867F-3E41-6FD1-7602303C7A35" value="true"/>
 </engineerTo>
-<nullsAllowed>true</nullsAllowed>
+<use>0</use>
+<logicalDatatype>LOGDT025</logicalDatatype>
+<domain>F7F5960D-C029-FFE2-5CD0-9485BB6EEFF9</domain>
+<defaultValue>&apos;N&apos;</defaultValue>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="xenable" id="95BB2FE7-144B-A19A-9840-D25D2D2450C2">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-02-27 07:10:09 UTC</createdTime>
+<ownerDesignName>rbac</ownerDesignName>
+<engineerTo>
+<item key="AB1836A8-867F-3E41-6FD1-7602303C7A35" value="true"/>
+</engineerTo>
+<use>0</use>
+<logicalDatatype>LOGDT025</logicalDatatype>
+<domain>F7F5960D-C029-FFE2-5CD0-9485BB6EEFF9</domain>
+<defaultValue>&apos;N&apos;</defaultValue>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="xdisable" id="DB91314B-907F-49AC-1B78-9E65DEDA42B4">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-02-27 07:10:21 UTC</createdTime>
+<ownerDesignName>rbac</ownerDesignName>
+<engineerTo>
+<item key="AB1836A8-867F-3E41-6FD1-7602303C7A35" value="true"/>
+</engineerTo>
 <use>0</use>
 <logicalDatatype>LOGDT025</logicalDatatype>
 <domain>F7F5960D-C029-FFE2-5CD0-9485BB6EEFF9</domain>

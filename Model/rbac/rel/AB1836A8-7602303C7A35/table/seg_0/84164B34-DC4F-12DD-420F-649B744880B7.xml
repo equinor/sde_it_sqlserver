@@ -88,6 +88,17 @@
 <ownDataTypeParameters>,,</ownDataTypeParameters>
 <autoIncrementCycle>false</autoIncrementCycle>
 </Column>
+<Column name="name" id="134E6D29-5D04-0E68-332A-C42B4389E7A0">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-02-27 07:13:08 UTC</createdTime>
+<generatorID>2A81A5C3-836F-02F6-5D4D-6444D4C2F6DE</generatorID>
+<ownerDesignName>rbac</ownerDesignName>
+<use>0</use>
+<logicalDatatype>LOGDT024</logicalDatatype>
+<domain>9DE59B8D-973E-CEB6-C00E-99D8D705817B</domain>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+</Column>
 </columns>
 <indexes itemClass="oracle.dbtools.crest.model.design.relational.Index">
 <ind_PK_UK id="54C88D49-32A3-9C65-8306-1F43665ECFFB" name="rbac_actor_PK">

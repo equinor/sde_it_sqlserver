@@ -54,6 +54,7 @@
 * 271124 Upgraded to Sqlserver                             JOTHOR
 * 051225 St_created_by/date to have defaults as Sqlserver   JOTHOR
 *  has only after triggers.
+* 090326 Batch_status: changed colum version to xversion    JOTHOR
 ******************************************************************/
 
 /* --Populate 
@@ -420,7 +421,7 @@ go
 create table FRAMEWORK_SCHEMA.batch_status
 (
     name                     nvarchar(150)   not null
-   ,version                  integer              not null
+   ,xversion                 integer              not null
    ,start_date               date                     null
    ,end_date                 date                     null
    ,nr_of_error              integer                  null

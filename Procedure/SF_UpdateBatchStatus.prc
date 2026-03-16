@@ -57,7 +57,7 @@ as
 * create table batch_status
 * (
 *   name                     varchar2(100) not null,
-*   version                  integer not null,
+*   xversion                 integer not null,
 *   start_date               date,
 *   end_date                 date,
 *   nr_of_error              integer,
@@ -67,13 +67,14 @@ as
 *   minute generated always as (round(("end_date"-"start_date")*60*24,0)) virtual,
 *   sec    generated always as (round(("end_date"-"start_date")*60*60*24,2)) virtual
 * );
-* alter table batch_status add (primary key (name,version));
+* alter table batch_status add (primary key (name,xversion));
 *
-*****************************************************************
+***********************************************************************
 * Log
 * Date   Description                                              Done by
 * 140410 Added PRAGMA AUTONOMOUS_TRANSACTION;					      JOTHOR
-* 141124 Changed to MS Sqlserver syntax                           JOTHOR         
+* 141124 Changed to MS Sqlserver syntax                           JOTHOR    
+* 090326 Altered column version to xversion                       JOTHOR     
 ***********************************************************************/
 begin
    STANDARD_VARIABLE;
@@ -93,18 +94,18 @@ begin
         USERERROR(20,'Error occurred during update of batch_status table. @pName is null');
       end;
 
-      set @lCount = -1;
-      BEGIN_TRANSACTION:
+      set @lCount = 0;
+      BEGIN_TRANSACTION(Tran_SF_UpdateBatchStatus);
          if (@pRetainHistory = TRUE_NR)
          begin
             -------------------------------------------     
             -- Move everything up one
             -------------------------------------------     
             update SCHEMA.batch_status
-               set version = version + 1
+               set xversion = xversion + 1
                where name = @pName;
             set @lCount = GET_ROWCOUNT;
-            DEBUG('retain - Update nr of rows for <'+@pName+'> : '+@lCount);
+            DEBUG('retain - Update nr of rows for <'+@pName+'> : '+cast(@lCount as nvarchar(10)));
 
             -------------------------------------------     
             -- Delete everything above limit
@@ -113,20 +114,20 @@ begin
             begin
               delete SCHEMA.batch_status
                   where name = @pName
-                  and version > @lHistoryLimit;
-               DEBUG('retain - Deleted nr of rows for <'+@pName+'> : '+GET_ROWCOUNT);
+                  and xversion > @lHistoryLimit;
+               DEBUG('retain - Deleted nr of rows for <'+@pName+'> : '+cast(GET_ROWCOUNT as nvarchar(10)));
             end;
          end;
          else
          begin
             delete SCHEMA.batch_status
                where name = @pName;
-            DEBUG('No retain -Deleted nr of rows for <'+@pName+'> : '+GET_ROWCOUNT);
+            DEBUG('No retain -Deleted nr of rows for <'+@pName+'> : '+cast(GET_ROWCOUNT as nvarchar(10)));
          end;
 
          insert into SCHEMA.batch_status (
              name
-            ,version             
+            ,xversion             
             ,start_date
             ,end_date
             ,nr_of_error
@@ -144,11 +145,15 @@ begin
             ,@pMessage
            ,@pHost
             );
-      END_TRANSACTION; -- Do not use macro C O M M I T as this will not expand for a SF_ procedure.
+      END_TRANSACTION(Tran_SF_UpdateBatchStatus); -- Do not use macro C O M M I T as this will not expand for a SF_ procedure.
       DEBUG_EXIT;
    EXCEPTION
-      --R OLLBACK;
+      DEBUG('Error: ' + coalesce(error_message(),'null') + '.');
+      DEBUG_EXIT
+      ROLLBACK;
       --S TD_EXCEPTION; -- Note, we are not using S T D_E X C E P T I O N_H A N D L E R
        select 1;
    END_EXCEPTION; 
 END_PROCEDURE;
+
+--graxxnt execute on sde_it.sf_updatebatchstatus to public;

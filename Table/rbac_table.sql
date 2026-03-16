@@ -12,7 +12,9 @@
 * Log
 * Date   Description					                           Done by
 * 180226 Prefixed tablenames wiht 'rbac_'                   JOTHOR 
-*           
+* 270226 Added is_spatial to rbac_legal_permission          JOTHOR     
+* 030226 Corrected spatial datatype names in                JOTHOR
+*  insert statements rbac_legal_permission        
 *****************************************************************/
 /*
 drop table  object_list;
@@ -64,12 +66,13 @@ end;
 
 --==================
 CREATE TABLE sde_it.rbac_actor 
-    ( st_created_by   nvarchar (75) DEFAULT 'NA'  NOT NULL 
-     ,st_created_date datetime2 DEFAULT convert(datetime, '1970-01-01', 102)  NOT NULL 
+    ( st_created_by   nvarchar (75) default 'NA'  not null 
+     ,st_created_date datetime2 default convert(datetime, '1970-01-01', 102)  not null 
      ,st_updated_by   nvarchar (75)  
      ,st_updated_date datetime2 
-     ,st_id           INTEGER identity(1,1)  NOT NULL 
-     ,is_active char(1) DEFAULT 'N'  NOT NULL 
+     ,st_id           integer identity(1,1)  not null 
+     ,is_active char(1) default 'N'  not null 
+     ,name            nvarchar (100) not null 
     );
 
 --COMMENT ON TABLE is sde_it.rbac_actor IS 'An actor can be a user, external system etc';
@@ -80,27 +83,28 @@ ALTER TABLE sde_it.rbac_actor ADD CHECK (is_active IN ('N', 'Y')) ;
 
 --==================
 CREATE TABLE sde_it.rbac_legal_permission 
-    (st_created_by   nvarchar (75) DEFAULT 'NA'  NOT NULL 
-     ,st_created_date datetime2 DEFAULT convert(datetime, '1970-01-01', 102)  NOT NULL 
+    (st_created_by   nvarchar (75) default 'NA'  not null 
+     ,st_created_date datetime2 default convert(datetime, '1970-01-01', 102)  not null 
      ,st_updated_by   nvarchar (75)  
      ,st_updated_date datetime2 
-     ,st_id           INTEGER identity(1,1)  NOT NULL 
-     ,is_active char(1) DEFAULT 'N'  NOT NULL 
-     ,data_type       nvarchar (100) 
-     ,xselect         char(1) DEFAULT 'N' 
-     ,xupdate         char(1) DEFAULT 'N' 
-     ,xinsert         char(1) DEFAULT 'N' 
-     ,xdelete         char(1) DEFAULT 'N' 
-     ,xexecute        char(1) DEFAULT 'N' 
-     ,xcreate         char(1) DEFAULT 'N' 
-     ,xdrop           char(1) DEFAULT 'N' 
-     ,xenable         char(1) DEFAULT 'N' 
-     ,xdisable        char(1) DEFAULT 'N' 
+     ,st_id           INTEGER identity(1,1)  not null 
+     ,is_active char(1) default 'N'  not null 
+     ,data_type       nvarchar (100)   not null
+     ,is_spatial      char(1) default 'N' not null
+     ,xselect         char(1) default 'N' not null
+     ,xupdate         char(1) default 'N' not null
+     ,xinsert         char(1) default 'N' not null
+     ,xdelete         char(1) default 'N' not null 
+     ,xexecute        char(1) default 'N' not null 
+     ,xcreate         char(1) default 'N' not null 
+     ,xdrop           char(1) default 'N' not null
+     ,xenable         char(1) default 'N' not null
+     ,xdisable        char(1) default 'N' not null
      ,parent_st_id    integer
-
     );
 
 ALTER TABLE sde_it.rbac_legal_permission ADD CHECK (is_active IN ('N', 'Y')) ;
+ALTER TABLE sde_it.rbac_legal_permission ADD CHECK (is_spatial IN ('N', 'Y')) ;
 ALTER TABLE sde_it.rbac_legal_permission ADD CHECK (xselect  IN ('N', 'Y')) ;
 ALTER TABLE sde_it.rbac_legal_permission ADD CHECK (xupdate  IN ('N', 'Y')) ;
 ALTER TABLE sde_it.rbac_legal_permission ADD CHECK (xinsert  IN ('N', 'Y')) ;
@@ -118,14 +122,14 @@ ALTER TABLE sde_it.rbac_legal_permission ADD CONSTRAINT legal_permission_unq UNI
 --==================
 CREATE TABLE sde_it.rbac_database 
     ( 
-     st_created_by   nvarchar (75) DEFAULT 'NA'  NOT NULL , 
-     st_created_date datetime2 DEFAULT convert(datetime, '1970-01-01', 102)  NOT NULL , 
+     st_created_by   nvarchar (75) default 'NA'  not null , 
+     st_created_date datetime2 default convert(datetime, '1970-01-01', 102)  not null , 
      st_updated_by   nvarchar (75)  , 
      st_updated_date datetime2 , 
-     st_id           INTEGER identity(1,1)  NOT NULL , 
-     is_active char(1) DEFAULT 'N'  NOT NULL , 
+     st_id           INTEGER identity(1,1)  not null , 
+     is_active char(1) default 'N'  not null , 
      server          char(1) , 
-     name            nvarchar(100)  NOT NULL 
+     name            nvarchar(100)  not null 
     ) ;
 
 ALTER TABLE sde_it.rbac_database  ADD CONSTRAINT rbac_database_PK PRIMARY KEY ( st_id ) ;
@@ -136,19 +140,19 @@ ALTER TABLE sde_it.rbac_database ADD CHECK (is_active IN ('N', 'Y')) ;
 
 --==================
 CREATE TABLE sde_it.rbac_object 
-    (st_created_by   nvarchar (75) DEFAULT 'NA'  NOT NULL 
-     ,st_created_date datetime2 DEFAULT convert(datetime, '1970-01-01', 102)  NOT NULL 
+    (st_created_by   nvarchar (75) default 'NA'  not null 
+     ,st_created_date datetime2 default convert(datetime, '1970-01-01', 102)  not null 
      ,st_updated_by   nvarchar (75)  
      ,st_updated_date datetime2 
-     ,st_id           INTEGER identity(1,1)  NOT NULL 
-     ,is_active char(1) DEFAULT 'N'  NOT NULL 
-     ,name            nvarchar (100)  NOT NULL 
-     ,xtype           nvarchar (100)  NOT NULL 
+     ,st_id           INTEGER identity(1,1)  not null 
+     ,is_active char(1) default 'N'  not null 
+     ,name            nvarchar (100)  not null 
+     ,xtype           nvarchar (100)  not null 
      ,xcomment        nvarchar (255) 
      ,parent_st_id    INTEGER 
-     ,rbac_database_st_id INTEGER  NOT NULL 
---     ,rbac_object_name    nvarchar (100)  NOT NULL 
---    ,rbac_object_xtype   nvarchar (100)  NOT NULL 
+     ,rbac_database_st_id INTEGER  not null 
+--     ,rbac_object_name    nvarchar (100)  not null 
+--    ,rbac_object_xtype   nvarchar (100)  not null 
     );
 
 ALTER TABLE sde_it.rbac_object ADD CHECK (is_active IN ('N', 'Y')) ;
@@ -166,25 +170,25 @@ ALTER TABLE sde_it.rbac_object ADD CONSTRAINT rbac_object_name_xtype_UN UNIQUE (
 --==================
 -- If columns added or deleted, update associated triggers.
 CREATE TABLE sde_it.rbac_permission 
-    (st_created_by   nvarchar (75) DEFAULT 'NA'  NOT NULL 
-     ,st_created_date datetime2 DEFAULT convert(datetime, '1970-01-01', 102)  NOT NULL 
+    (st_created_by   nvarchar (75) default 'NA'  not null 
+     ,st_created_date datetime2 default convert(datetime, '1970-01-01', 102)  not null 
      ,st_updated_by   nvarchar (75)  
      ,st_updated_date datetime2 
-     ,st_id           INTEGER identity(1,1)  NOT NULL 
-     ,is_active char(1) DEFAULT 'N'  NOT NULL 
-     ,rbac_role_st_id      INTEGER  NOT NULL 
-     ,rbac_object_st_id   INTEGER  NOT NULL 
-     ,change_date     datetime2 DEFAULT convert(datetime, '1970-01-01', 102) 
-     ,deploy_date     datetime2 DEFAULT null
-     ,xselect         char(1) DEFAULT 'N' 
-     ,xupdate         char(1) DEFAULT 'N' 
-     ,xinsert         char(1) DEFAULT 'N' 
-     ,xdelete         char(1) DEFAULT 'N' 
-     ,xexecute        char(1) DEFAULT 'N' 
-     ,xcreate         char(1) DEFAULT 'N' 
-     ,xdrop           char(1) DEFAULT 'N' 
-     ,xenable         char(1) DEFAULT 'N' 
-     ,xdisable        char(1) DEFAULT 'N' 
+     ,st_id           INTEGER identity(1,1)  not null 
+     ,is_active char(1) default 'N'  not null 
+     ,rbac_role_st_id      INTEGER  not null 
+     ,rbac_object_st_id   INTEGER  not null 
+     ,change_date     datetime2 default convert(datetime, '1970-01-01', 102) 
+     ,deploy_date     datetime2 default null
+     ,xselect         char(1) default 'N' 
+     ,xupdate         char(1) default 'N' 
+     ,xinsert         char(1) default 'N' 
+     ,xdelete         char(1) default 'N' 
+     ,xexecute        char(1) default 'N' 
+     ,xcreate         char(1) default 'N' 
+     ,xdrop           char(1) default 'N' 
+     ,xenable         char(1) default 'N' 
+     ,xdisable        char(1) default 'N' 
      ) ;
      
 ALTER TABLE sde_it.rbac_permission ADD CONSTRAINT rbac_permission_PK PRIMARY KEY ( st_id ) ;
@@ -202,17 +206,17 @@ ALTER TABLE sde_it.rbac_permission ADD CHECK (xdisable IN ('N', 'Y')) ;
 
 --==================
 CREATE TABLE sde_it.rbac_role 
-    (st_created_by   nvarchar (75) DEFAULT 'NA'  NOT NULL 
-     ,st_created_date datetime2 DEFAULT convert(datetime, '1970-01-01', 102)  NOT NULL 
+    (st_created_by   nvarchar (75) default 'NA'  not null 
+     ,st_created_date datetime2 default convert(datetime, '1970-01-01', 102)  not null 
      ,st_updated_by   nvarchar (75)  
      ,st_updated_date datetime2 
-     ,st_id           INTEGER identity(1,1)  NOT NULL 
-     ,is_active char(1) DEFAULT 'N'  NOT NULL 
+     ,st_id           INTEGER identity(1,1)  not null 
+     ,is_active char(1) default 'N'  not null 
      ,parent_st_id     INTEGER 
-     ,name            nvarchar (100)  NOT NULL 
-     ,is_system_role  char(1) DEFAULT 'N'  NOT NULL 
-     ,change_date     datetime2 DEFAULT convert(datetime, '1970-01-01', 102) 
-     ,deploy_date     datetime2 DEFAULT null
+     ,name            nvarchar (100)  not null 
+     ,is_system_role  char(1) default 'N'  not null 
+     ,change_date     datetime2 default convert(datetime, '1970-01-01', 102) 
+     ,deploy_date     datetime2 default null
     );
 
 alter table sde_it.rbac_role add check (is_active IN ('N', 'Y')) ;
@@ -225,10 +229,10 @@ alter table sde_it.rbac_role add constraint rbac_role_name_un unique (name)
 CREATE TABLE sde_it.rbac_actor_role 
     (rbac_actor_st_id     integer  not null
     ,rbac_role_st_id     integer  not null
-    ,st_id           integer identity(1,1)  NOT NULL  -- not a primary key
+    ,st_id           integer identity(1,1)  not null  -- not a primary key
     ,st_created_date datetime2 default convert(datetime, '1970-01-01', 102)  not null
     ,st_created_by   nvarchar (75) default convert(datetime, '1970-01-01', 102)  not null
-    ,st_updated_by   nvarchar (75) default convert(datetime, '1970-01-01', 102)
+    ,st_updated_by   nvarchar (75) default 'NA'
     ,st_updated_date datetime2 default convert(datetime, '1970-01-01', 102) 
     ) ;
 
@@ -282,20 +286,40 @@ alter table sde_it.rbac_actor_role
 
 ---------------------------------------------------------------------
 -- Preload data.
+-- First option is preloading
+-- Second option looks at schema create date-not quite safe approach.
+--  What if objects not belongint to "schema" are touched.
 ---------------------------------------------------------------------
-insert into sde_it.rbac_legal_permission (data_type,is_active,xselect, xupdate,xinsert,xdelete,xexecute,xcreate,xdrop,xenable,xdisable) values
- ('SCHEMA'     ,'Y','N','N','N','N', 'N','Y','Y','N', 'N');
-,('SQL_TRIGGER','Y','N','N','N','N', 'N','Y','Y','Y', 'Y')
-,('USER_TABLE' ,'Y','Y','Y','Y','Y', 'N','Y','Y','N', 'N')
-,('VIEW'       ,'Y','Y','Y','Y','Y', 'N','Y','Y','N', 'N')
-,('SYNONYM '   ,'Y','Y','Y','Y','Y', 'Y','Y','Y','N', 'N')
-,('SQL_SCALAR_FUNCTION' ,'Y','N','N','N','N', 'Y','Y','Y','N', 'N')
-,('SQL_STORED_PROCEDURE','Y','N','N','N','N', 'Y','Y','Y','N', 'N');
+-- Option 1
+begin
+   declare @lId integer = 0;
+   insert into sde_it.rbac_legal_permission (data_type,is_active,is_spatial
+         ,xselect, xupdate,xinsert,xdelete
+         ,xexecute,xcreate,xdrop,xenable,xdisable
+         )
+    values('SCHEMA','Y','N','N','N','N','N', 'N','Y','Y','N', 'N');
+   select @lId = st_id from sde_it.rbac_legal_permission where data_type = 'SCHEMA';
+   if (@lId is not null)
+   begin
+     insert into sde_it.rbac_legal_permission (parent_st_id,data_type,is_active,is_spatial
+         ,xselect, xupdate,xinsert,xdelete
+         ,xexecute,xcreate,xdrop,xenable,xdisable
+         ) 
+       values (@lId,'FEATURE CLASS'  ,'Y','Y','Y','Y','Y','Y', 'N','N','N','N','N')
+             ,(@lId,'FEATURE DATASET','Y','Y','Y','Y','Y','Y', 'N','N','N','N','N')
+             ,(@lId,'USER_TABLE'     ,'Y','N','Y','Y','Y','Y', 'N','Y','Y','N','N')
+             ,(@lId,'VIEW'           ,'Y','N','Y','Y','Y','Y', 'N','Y','Y','N','N')
+             ,(@lId,'SYNONYM'        ,'Y','N','Y','Y','Y','Y', 'Y','Y','Y','N','N')
+             ,(@lId,'SQL_TRIGGER'    ,'Y','N','N','N','N','N', 'N','Y','Y','Y','Y')
+             ,(@lId,'SQL_SCALAR_FUNCTION' ,'Y','N','N','N','N','N', 'Y','Y','Y','N','N')
+             ,(@lId,'SQL_STORED_PROCEDURE','Y','N','N','N','N','N', 'Y','Y','Y','N','N');
+   end;
+end; 
+/* Option 2. Not quite safe approach
 begin
    declare @lID integer;
    declare @lDate datetime2;
-   select @lID = st_id,@lDate = st_created_date where name ='SCHEMA';
-   
+   select  @lID = st_id,@lDate = st_created_date where name ='SCHEMA';
    update sde_it.rbac_legal_permission 
       set parent_st_id=@lID 
       where st_created_date > @lDate;
@@ -303,7 +327,7 @@ begin
       set parent_st_id=null 
       where st_id =@lID;
 end;      
-   
+*/  
 
 
 
