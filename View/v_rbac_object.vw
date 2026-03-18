@@ -1,5 +1,4 @@
 /*****************************************************************
-* Audit trigger
 *  Package Info
 *   Author          : $Author: JOTHOR $
 *   Original Date   : $Date: 2026-02-16 $
