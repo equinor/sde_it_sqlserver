@@ -8,6 +8,7 @@ CREATE_PROCEDURE(SCHEMA.sf_updatebatchstatus)(@pName nvarchar(250)
    ,@pHost nvarchar(250) = 'NA'
    )
   --with execute as { CALLER | SELF | OWNER | 'user_name' } 
+--with execute as owner
 as
 /***********************************************************************
 * Package Info

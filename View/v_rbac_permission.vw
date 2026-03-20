@@ -24,6 +24,8 @@ select ob.db_name
       ,r.name as role_name
       ,ob.name as object_name
       ,ob.xtype as object_type
+      ,perm.change_date
+      ,perm.deploy_date
       ,perm.xselect
       ,perm.xupdate
       ,perm.xinsert
