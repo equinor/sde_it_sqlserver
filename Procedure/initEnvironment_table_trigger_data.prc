@@ -55,6 +55,7 @@
 * 051225 St_created_by/date to have defaults as Sqlserver   JOTHOR
 *  has only after triggers.
 * 090326 Batch_status: changed colum version to xversion    JOTHOR
+* 100426 Batch_status: start/end_date now datetime2         JOTHOR
 ******************************************************************/
 
 /* --Populate 
@@ -232,13 +233,15 @@ go
 drop table if exists FRAMEWORK_SCHEMA.cleanuptableinfo; -- cascade constraints purge;
 go
 create table FRAMEWORK_SCHEMA.cleanuptableinfo (
-    appname nvarchar(130) default 'na' not null
-   ,columnappname nvarchar(130) default 'na' not null
-   ,tabname nvarchar(60) not null
-   ,message nvarchar(130)
+    appname nvarchar(150) default 'na' not null
+   ,columnappname nvarchar(150) default 'na' not null
+   ,xschema nvarchar(150) not null
+   ,tabname nvarchar(150) not null
+   ,message nvarchar(300)
    ,days integer  not null
-   ,synccolumn nvarchar(60)  not null
-   ,isactive integer default 0   not null
+   ,synccolumn nvarchar(150)  not null
+   ,isactive char(1) default 'N'   not null
+   ,additional_condition nvarchar(400) 
    ,st_id            int identity not null
    ,st_created_by    nvarchar(100) not null  default N'NA' 
    ,st_created_date  datetime2   not null default convert(datetime, '1970-01-01', 102)
@@ -246,7 +249,7 @@ create table FRAMEWORK_SCHEMA.cleanuptableinfo (
    ,st_updated_date  datetime2            --with time zone
    ,constraint pk_cleanuptableinfo primary key (st_id)
    ,constraint unq_cleanuptableinfo unique (appname,tabname)
-   ,constraint con_isactive check (isactive in (0,1))
+   ,constraint con_isactive check (isactive in ('N','Y'))
    ,constraint con_nr_days  check (days >= 0)
 );
 go
@@ -255,7 +258,7 @@ TABLE_COLUMN_COMMENT(FRAMEWORK_SCHEMA,cleanuptableinfo,tabname,The table to be p
 go
 TABLE_COLUMN_COMMENT(FRAMEWORK_SCHEMA,cleanuptableinfo,columnappname,The column name within the table ("tabname") on which "appname" resides.);
 go
-TABLE_COLUMN_COMMENT(FRAMEWORK_SCHEMA,cleanuptableinfo,columnappname,Whether or not this entry is active (1) or not (0).);
+TABLE_COLUMN_COMMENT(FRAMEWORK_SCHEMA,cleanuptableinfo,columnappname,Whether or not this entry is active (Y) or not (N).);
 go
 TABLE_COLUMN_COMMENT(FRAMEWORK_SCHEMA,cleanuptableinfo,appname ,The application to sync on. See also "message".);
 go
@@ -347,20 +350,20 @@ drop table if exists FRAMEWORK_SCHEMA.t_basis_clienterrorlog; -- cascade constra
 go
 create table FRAMEWORK_SCHEMA.t_basis_clienterrorlog
 (
-   --,clienterrorlog_s     nvarchar(19)        not null
-    logid                integer                      null
-   ,userregistered       nvarchar(40)            null
-   ,dateregistered       date                         null
-   ,messagecode          nvarchar(13)            null
-   ,messagetext          nvarchar(4000)          null
-   ,dberrorcode          integer                      null
-   ,dberrortext          nvarchar(255)           null
-   ,objecterroroccurred  nvarchar(40)            null
-   ,rowerroroccurred     integer                      null
-   ,applicationname      nvarchar(150)           null
-   ,applicationversion   nvarchar(50)            null
-   ,description          nvarchar(255)           null
-   ,host                 nvarchar(255) default 'NA'   null
+   --,clienterrorlog_s     nvarchar(19)    not null
+    logid                integer           null
+   ,userregistered       nvarchar(40)      null
+   ,dateregistered       datetime2         null
+   ,messagecode          nvarchar(13)      null
+   ,messagetext          nvarchar(4000)    null
+   ,dberrorcode          integer           null
+   ,dberrortext          nvarchar(255)     null
+   ,objecterroroccurred  nvarchar(40)      null
+   ,rowerroroccurred     integer           null
+   ,applicationname      nvarchar(150)     null
+   ,applicationversion   nvarchar(50)      null
+   ,description          nvarchar(255)     null
+   ,host                 nvarchar(255) default N'NA'   null
    ,st_id int identity not null
    ,st_created_by nvarchar(100) not null default N'NA'  -- note capital "N"
    ,st_created_date datetime2   not null default convert(datetime, '1970-01-01', 102)
@@ -420,14 +423,14 @@ drop table if exists FRAMEWORK_SCHEMA.batch_status; -- cascade constraints purge
 go
 create table FRAMEWORK_SCHEMA.batch_status
 (
-    name                     nvarchar(150)   not null
-   ,xversion                 integer              not null
-   ,start_date               date                     null
-   ,end_date                 date                     null
-   ,nr_of_error              integer                  null
-   ,nr_business_transaction  integer                  null
-   ,message                  nvarchar(1000)      null
-   ,host                     nvarchar(100)   DEFAULT 'NA'
+    name                     nvarchar(150)  not null
+   ,xversion                 integer        not null
+   ,start_date               datetime2      null
+   ,end_date                 datetime2      null
+   ,nr_of_error              integer        null
+   ,nr_business_transaction  integer        null
+   ,message                  nvarchar(1000) null
+   ,host                     nvarchar(100)  default N'NA'
    ,hour as datediff(hour,  start_date,end_date) persisted
    ,min  as datediff(minute,start_date,end_date) persisted
    ,sec  as datediff(second,start_date,end_date) persisted
@@ -545,19 +548,19 @@ go
 --***************************************************************
 begin
    insert into FRAMEWORK_SCHEMA.cleanuptableinfo(appname, tabname, message, days, synccolumn, isactive, columnappname)
-      values('NA', 't_basis_clienterrorlog', NULL, 10, 'row_create_date', 1, 'NA');
+      values('NA', 't_basis_clienterrorlog', NULL, 10, 'row_create_date', 'Y', 'NA');
    insert into FRAMEWORK_SCHEMA.cleanuptableinfo(appname, tabname, message, days, synccolumn,isactive, columnappname)
-      values('NA', 'process_information_history', NULL, 90, 'start_time', 1, 'NA');
+      values('NA', 'process_information_history', NULL, 90, 'start_time', 'Y', 'NA');
    insert into FRAMEWORK_SCHEMA.cleanuptableinfo(appname, tabname, message, days, synccolumn, isactive, columnappname)
       values('NA', 'runlog', NULL, 90, 'start_date', 0, 'NA');
    insert into FRAMEWORK_SCHEMA.cleanuptableinfo(appname, tabname, message, days, synccolumn, isactive, columnappname)
-      values('NA', 'table_lock_history', NULL, 60, 'start_time', 1, 'NA');
+      values('NA', 'table_lock_history', NULL, 60, 'start_time', 'Y', 'NA');
    insert into FRAMEWORK_SCHEMA.cleanuptableinfo(appname, tabname, message, days, synccolumn, isactive, columnappname)
       values('NA', 'sync_state', NULL, 60, 'start_time', 0, 'NA');
    insert into FRAMEWORK_SCHEMA.cleanuptableinfo(appname, tabname, message, days, synccolumn, isactive, columnappname)
-      values('NA', 'compress_log', NULL, 10, 'compress_start', 1, 'NA');
+      values('NA', 'compress_log', NULL, 10, 'compress_start', 'Y', 'NA');
    insert into FRAMEWORK_SCHEMA.cleanuptableinfo(appname, tabname, message, days, synccolumn, isactive, columnappname)
-      values('NA', 'client_version', NULL, 10, 'logon_time', 1, 'NA');
+      values('NA', 'client_version', NULL, 10, 'logon_time', 'Y', 'NA');
    commit;
 end;
 

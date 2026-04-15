@@ -1,11 +1,12 @@
 CREATE_TRIGGER(SCHEMA.taud_batch_status)
   on SCHEMA.batch_status
-  --[ with <dml_trigger_option> [ , ...n ] ]
-  after insert,update
-as
+  after insert, update
+  as
 /*****************************************************************
-*   Author          : $Author:  $
-*   Original Date   : $Date:  $
+* Audit trigger
+*  Package Info
+*   Author          : $Author: JOTHOR $
+*   Original Date   : $Date: 2026-03-23 $
 *   Last Modified   : $Modtime: $
 *   Archive Name    : $Archive: $
 *   Description     : $Header:  $
@@ -15,93 +16,87 @@ as
 *   Copyright       : $Equinor ASA: $
 *****************************************************************
 * Description
-* NOTE: The "current_User will return the name of the user in the database 
-* whereas "suser_name()" will return the user name on the server.
+* Template created by: JOTHOR
+* Maintains the create and update columns in the table.
 *
-* More information on triggers. Check out e.g "set nocount on"
-*   Ref: https://learn.microsoft.com/en-us/sql/t-sql/statements/create-trigger-transact-sql?view=sql-server-ver17
-*         https://learn.microsoft.com/en-us/sql/relational-databases/triggers/create-dml-triggers?view=sql-server-ver17
+* Could extend auditing by including 
+*  os-user (255 char)
+* Why? ths "user" is not always the actual user. Using "os-user" 
+* pinpoint the user who is logged in on the PC. This user may use
+* a common login user thereby camouflaging their identify.
 *
-*  Maintains the create and update columns in the table.
+* Which to utc date to use?
+* https://learn.microsoft.com/en-us/sql/t-sql/functions/getutcdate-transact-sql?view=sql-server-ver17
 *****************************************************************
 * Log
-* Date   Description                                        Done by
-* 170812 Illegal to alter "create" information once data    JOTHOR
+* Date   Description                                     Done by
+* 170812 Illegal to alter "create" information once data JOTHOR
 *  has been entered.
 *****************************************************************/
 begin
-   if (rowcount_big() = 0)
+      if (rowcount_big() = 0)
          return;
-
-   if trigger_nestlevel() > 1
-      return
-
-   BEGIN_EXCEPTION
-      STANDARD_VARIABLE;
+      if TRIGGER_NESTLEVEL() > 1
+         return
+         
       set nocount on;
-   /****************
-   xxx https://learn.microsoft.com/en-us/sql/t-sql/functions/columns-updated-transact-sql?view=sql-server-ver17   
-   xxx https://forums.sqlteam.com/t/sql-trigger-to-check-if-value-has-been-inserted-already-after-insert/11700
-   xxx https://learn.microsoft.com/en-us/sql/t-sql/functions/update-trigger-functions-transact-sql?view=sql-server-ver17
-   example of how to access. Have to first create a variable of the corresponding datatype.
-      st_created_by {char type} = st_created_by from inserted;
-      st_created_by {char type} = st_created_by from deleted;
-   ****************/
-
-      if (IS_TRG_INSERTING)
-      begin
-         update inserted
-            set st_created_by = suser_name()  --current_user
-            ,st_created_date = getutcdate()
-            ,st_updated_by = null
-            ,st_updated_date = null
-         where st_id in (select st_id from inserted);
-      end;
-      else if (IS_TRG_UPDATING)
-      begin
-         declare @lCnt integer = 0;
-
-         select @lCnt = count(*)
-            from inserted
-            inner join deleted
-               on inserted.st_id=deleted.st_id
-            where inserted.st_created_by is null or inserted.st_created_by <> deleted.st_created_by;
-         if (@lCnt > 0) 
+      STANDARD_VARIABLE;
+      ---------------------------------------------------------
+      -- Update: Illegal to alter st_created_by and st_created_date.
+      -- If actor attempts to alter st_updated_by and/or st_updated_date,
+      -- these will be overwritten regardless. 
+      -- There is code to flag if actor attempts to set these values,
+      -- but currently not engaged
+      ---------------------------------------------------------
+      BEGIN_EXCEPTION
+         if (IS_TRG_INSERTING) 
          begin
-            USERERROR(19 ,'st_created_by' ,'XUSER');
-         end;
-         
-         select @lCnt = count(*)
-            from inserted
-            inner join deleted
-               on inserted.st_id=deleted.st_id
-            where (inserted.st_updated_date is null and deleted.st_updated_date is not null)
-            or inserted.st_updated_date <> deleted.st_updated_date;
-            
-         if (@lCnt > 0)
-         begin
-            USERERROR(19 ,'st_created_by' ,'XUSER');
-         end;
-            
-/****************
-         if (:old.st_updated_date is null and :new.st_updated_date is null)        
-            pass; -- ok, this handles the first time the row is updated.
-         else if (:new.st_updated_date is null)
-         begin
-            USERERROR(11 ,'st_updated_date' ,'XUSER');
+            update SCHEMA.batch_status
+               set st_created_by   = suser_sname()
+                  ,st_created_date = sysutcdatetime()
+                  ,st_updated_by   = null
+                  ,st_updated_date = null
+               where st_id in (select st_id from inserted);
          end
-         else if (:new.st_updated_date <> :old.st_updated_date)
+         else if (IS_TRG_UPDATING) 
          begin
-            USERERROR(19 ,'st_updated_date' ,'XUSER');
+            /*
+            ------------------------------------------------------------
+            -- Not engaging this error checking as uncertain how exception
+            -- handling shall be handled. Shall the trigger rollback (see
+            -- macro "create_method" and the macro setting "mcr_trans_off".
+            -- Till further notice, the attributes st_created_by and
+            -- st_created_date will be reset to original values and no
+            -- notification will be given to actor activiating the trigger.
+            ------------------------------------------------------------
+            if exists(select 1 from inserted i
+                   inner join deleted d
+                   on i.st_id = d.st_id
+                   and i.st_created_by != d.st_created_by
+                     )
+            begin
+               USERERROR(19,'st_created_by','XUSER');
+            end
+            else if exists(select 1 from inserted i
+                   inner join deleted d
+                   on i.st_id = d.st_id
+                   and i.st_created_date != d.st_created_date
+                   )
+            begin
+               USERERROR(19,'st_created_date','XUSER');
+            end
+            */
+            
+            -- Fetching original create info from deleted table.
+            update SCHEMA.batch_status
+               set st_created_by   = d.st_created_by 
+                  ,st_created_date = d.st_created_date
+                  ,st_updated_by   = suser_sname()
+                  ,st_updated_date = sysutcdatetime()
+               from deleted d
+               where SCHEMA.batch_status.st_id = d.st_id;
          end;
-****************/
-         
-         update inserted 
-            set st_updated_by   = suser_name()  --current_user
-               ,st_updated_date = getutcdate()
-            where st_id in (select st_id from inserted);
-      end;
    EXCEPTION
-     THROW_EXCEPTION_HANDLER;
-   END_EXCEPTION;
+      THROW_EXCEPTION_HANDLER;
+   END_EXCEPTION
 END_TRIGGER;

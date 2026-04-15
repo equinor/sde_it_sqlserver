@@ -86,6 +86,7 @@ begin
 
    if (GET_TRANCOUNT > 0)
    begin
+      DEBUG('Trancount = '+cast(GET_TRANCOUNT as nvarchar(10)) + '.');
       USERERROR(20,'XFUNC_NAME: Please close transactions prior to calling this procedure.');
    end;
    

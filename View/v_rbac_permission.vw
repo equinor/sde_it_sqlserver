@@ -19,9 +19,9 @@
 *****************************************************************/
 CREATE_VIEW(SCHEMA.v_rbac_permission)
 as
-select ob.db_name
+select r.name as role_name 
+      ,ob.db_name
       ,ob.schema_name
-      ,r.name as role_name
       ,ob.name as object_name
       ,ob.xtype as object_type
       ,perm.change_date

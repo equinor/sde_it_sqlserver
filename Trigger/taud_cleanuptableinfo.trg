@@ -50,7 +50,7 @@ begin
 
       if (IS_TRG_INSERTING)
       begin
-         update inserted
+         update SCHEMA.cleanuptableinfo
             set st_created_by = suser_name()  --current_user
             ,st_created_date = getutcdate()
             ,st_updated_by = null
@@ -96,7 +96,7 @@ begin
          end;
 ****************/
          
-         update inserted 
+         update SCHEMA.cleanuptableinfo 
             set st_updated_by   = suser_name()  --current_user
                ,st_updated_date = getutcdate()
             where st_id in (select st_id from inserted);
