@@ -1,0 +1,79 @@
+CREATE_PROCEDURE(SCHEMA.xxx)
+--with execute ???
+--with execute as owner
+as
+/*****************************************************************
+*  Procedure Info
+*   Author          : $Author:  $
+*   Original Date   : $Date:  $
+*   Last Modified   : $Modtime: $
+*   Archive Name    : $Archive: $
+*   Description     : $Header:  $
+*   Revision History: $Revision: 1.0 $
+*   Tag name        : $Name:  $
+*   Workfile        : $Workfile: $
+*****************************************************************
+* Description
+* Caution: Use caution when "throw" or "raise" is used.
+* Transactions settings:
+  SET XACT_ABORT { ON | OFF }
+  https://learn.microsoft.com/en-us/sql/t-sql/statements/set-xact-abort-transact-sql?view=sql-server-ver17
+  
+  select case
+   when (@@options & 16384) = 16384 then 'XACT_ABORT is ON'
+   else 'XACT_ABORT is OFF'
+   end as xact_abort_status;
+
+  XACT_STATE()
+  https://learn.microsoft.com/en-us/sql/t-sql/functions/xact-state-transact-sql?view=sql-server-ver17
+  
+  Also check the ANSI_WARNINGS status as this has an affect on transactions and exceptions raised.
+*
+*****************************************************************
+* Log
+* Date   Description					                           Done by
+*
+*****************************************************************/
+   STANDARD_VARIABLE;
+   LOGTABLE_DECLARE;
+        
+begin
+   -- Recommended
+   set nocount on;
+   -- Consider capturing current status and reset if differs once procedure completes.
+   set xact_abort on;
+  
+   -- Example shows nested transactions.
+   BEGIN_EXCEPTION
+      SETSTATUS(OK);
+      BEGIN_TRANSACTION
+         BEGIN_EXCEPTION
+            BEGIN_TRANSACTION
+               
+            END_TRANSACTION;
+         EXCEPTION
+            SETSTATUS(ERRORR)
+            -- capture and log?
+            SET_TEMP_STR('your message here');
+            -- Last two columns are optional as exemplified below
+           -- LOGTABLE_INSERT(LEVEL_MEDIUM,GET_TEMP_STR,'NA1','NA2' );
+           -- LOGTABLE_INSERT(LEVEL_MEDIUM,GET_TEMP_STR);
+            throw;
+         END_EXCEPTION;
+      END_TRANSACTION;
+   EXCEPTION
+      if (GETSTATUS != OK)
+      begin
+         ROLLBACK; 
+      end;
+      --Your choice of handling.
+         --S TD_EXCEPTION_HANDLER;
+         -- throw;
+   END_EXCEPTION;    
+    
+    -- Consider eclosing in exception handling block.
+    BEGIN_TRANSACTION
+      LOGTABLE_DUMP;
+    END_TRANSACTION
+   -- Reset xact_abort once procedure complete??
+END_CREATE_PROCEDURE;
