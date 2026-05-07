@@ -28,6 +28,7 @@ as
   https://learn.microsoft.com/en-us/sql/t-sql/functions/xact-state-transact-sql?view=sql-server-ver17
   
   Also check the ANSI_WARNINGS status as this has an affect on transactions and exceptions raised.
+  https://www.sqlservercentral.com/articles/what-is-the-impact-of-setting-set-ansi_warnings-off-1
 *
 *****************************************************************
 * Log

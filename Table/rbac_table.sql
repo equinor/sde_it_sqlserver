@@ -15,6 +15,7 @@
 * 270226 Added is_spatial to rbac_legal_permission          JOTHOR     
 * 030226 Corrected spatial datatype names in                JOTHOR
 *  insert statements rbac_legal_permission        
+* 060526 Added initial_permission                           JOTHOR
 *****************************************************************/
 /*
 drop table  object_list;
@@ -63,9 +64,27 @@ begin
 end;
 */
 
+create table sde_it.rbac_initial_oracle_permission(
+    grantor     nvarchar(200)
+   ,grantee     nvarchar(200) 
+   ,table_schema nvarchar(200)
+   ,table_name  nvarchar(200)
+   ,column_name nvarchar(200)
+   ,privilege   nvarchar(200)
+   ,grantable   nvarchar(100)
+   ,[hierarchy] nvarchar(200)
+   ,common      nvarchar(200)
+   ,[type]      nvarchar(200)
+   ,st_id       integer identity(1,1)  not null
+   ,st_created_date datetime2 default convert(datetime, '1970-01-01', 102)  not null 
+   ,st_created_by nvarchar(125) default 'NA' not null
+   ,st_updated_by   nvarchar (75)  
+   ,st_updated_date datetime2 
+);
+ALTER TABLE sde_it.rbac_initial_oracle_permission ADD CONSTRAINT rbac_initial_oracle_permission PRIMARY KEY ( st_id ) ;
 
 --==================
-CREATE TABLE sde_it.rbac_actor 
+create table sde_it.rbac_actor 
     ( st_created_by   nvarchar (75) default 'NA'  not null 
      ,st_created_date datetime2 default convert(datetime, '1970-01-01', 102)  not null 
      ,st_updated_by   nvarchar (75)  
@@ -82,7 +101,7 @@ ALTER TABLE sde_it.rbac_actor ADD CHECK (is_active IN ('N', 'Y')) ;
 ALTER TABLE sde_it.rbac_actor ADD CHECK (is_active IN ('N', 'Y')) ;
 
 --==================
-CREATE TABLE sde_it.rbac_legal_permission 
+create table sde_it.rbac_legal_permission 
     (st_created_by   nvarchar (75) default 'NA'  not null 
      ,st_created_date datetime2 default convert(datetime, '1970-01-01', 102)  not null 
      ,st_updated_by   nvarchar (75)  
@@ -120,7 +139,7 @@ ALTER TABLE sde_it.rbac_legal_permission ADD CONSTRAINT legal_permission_PK PRIM
 ALTER TABLE sde_it.rbac_legal_permission ADD CONSTRAINT legal_permission_unq UNIQUE (data_type) ;
 
 --==================
-CREATE TABLE sde_it.rbac_database 
+create table sde_it.rbac_database 
     ( 
      st_created_by   nvarchar (75) default 'NA'  not null , 
      st_created_date datetime2 default convert(datetime, '1970-01-01', 102)  not null , 
@@ -139,7 +158,7 @@ ALTER TABLE sde_it.rbac_database ADD CONSTRAINT rbac_database_unq UNIQUE ( name 
 ALTER TABLE sde_it.rbac_database ADD CHECK (is_active IN ('N', 'Y')) ; 
 
 --==================
-CREATE TABLE sde_it.rbac_object 
+create table sde_it.rbac_object 
     (st_created_by   nvarchar (75) default 'NA'  not null 
      ,st_created_date datetime2 default convert(datetime, '1970-01-01', 102)  not null 
      ,st_updated_by   nvarchar (75)  
@@ -169,7 +188,7 @@ ALTER TABLE sde_it.rbac_object ADD CONSTRAINT rbac_object_name_xtype_UN UNIQUE (
 
 --==================
 -- If columns added or deleted, update associated triggers.
-CREATE TABLE sde_it.rbac_permission 
+create table sde_it.rbac_permission 
     (st_created_by   nvarchar (75) default 'NA'  not null 
      ,st_created_date datetime2 default convert(datetime, '1970-01-01', 102)  not null 
      ,st_updated_by   nvarchar (75)  
@@ -205,7 +224,7 @@ ALTER TABLE sde_it.rbac_permission ADD CHECK (xenable IN ('N', 'Y')) ;
 ALTER TABLE sde_it.rbac_permission ADD CHECK (xdisable IN ('N', 'Y')) ;
 
 --==================
-CREATE TABLE sde_it.rbac_role 
+create table sde_it.rbac_role 
     (st_created_by   nvarchar (75) default 'NA'  not null 
      ,st_created_date datetime2 default convert(datetime, '1970-01-01', 102)  not null 
      ,st_updated_by   nvarchar (75)  
@@ -226,7 +245,7 @@ alter table sde_it.rbac_role add constraint rbac_role_name_un unique (name)
 
 
 --==================
-CREATE TABLE sde_it.rbac_actor_role 
+create table sde_it.rbac_actor_role 
     (rbac_actor_st_id     integer  not null
     ,rbac_role_st_id     integer  not null
     ,st_id           integer identity(1,1)  not null  -- not a primary key
