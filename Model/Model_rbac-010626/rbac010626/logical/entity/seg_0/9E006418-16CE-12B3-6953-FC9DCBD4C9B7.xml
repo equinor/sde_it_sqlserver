@@ -1,0 +1,162 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<Entity class="oracle.dbtools.crest.model.design.logical.Entity" directorySegmentName="seg_0" id="9E006418-16CE-12B3-6953-FC9DCBD4C9B7" name="rbac_legal_permission">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-01-30 11:51:20 UTC</createdTime>
+<ownerDesignName>rbac</ownerDesignName>
+<engineerTo>
+<item key="AB1836A8-867F-3E41-6FD1-7602303C7A35" value="true"/>
+</engineerTo>
+<adequatelyNormalized>NO</adequatelyNormalized>
+<expectedVolumes>0</expectedVolumes>
+<fwdEngineeringStrategyName>Single Table</fwdEngineeringStrategyName>
+<growthPercent>0</growthPercent>
+<growthType>Year</growthType>
+<hierarchicalParent>A6A94129-364F-C80D-E372-F18AA5CD008A</hierarchicalParent>
+<maxVolumes>9999999</maxVolumes>
+<minVolumes>0</minVolumes>
+<normalForm>Third</normalForm>
+<attributes itemClass="oracle.dbtools.crest.model.design.logical.Attribute">
+<Attribute name="data_type" id="71DB342F-C364-9B3B-3F93-471B3EEC9788">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-01-30 11:51:42 UTC</createdTime>
+<ownerDesignName>rbac</ownerDesignName>
+<engineerTo>
+<item key="AB1836A8-867F-3E41-6FD1-7602303C7A35" value="true"/>
+</engineerTo>
+<nullsAllowed>true</nullsAllowed>
+<use>0</use>
+<logicalDatatype>LOGDT024</logicalDatatype>
+<domain>9DE59B8D-973E-CEB6-C00E-99D8D705817B</domain>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="xselect" id="24096985-95FC-85A7-85D7-30C903521C52">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-01-30 11:52:46 UTC</createdTime>
+<ownerDesignName>rbac</ownerDesignName>
+<engineerTo>
+<item key="AB1836A8-867F-3E41-6FD1-7602303C7A35" value="true"/>
+</engineerTo>
+<nullsAllowed>true</nullsAllowed>
+<use>0</use>
+<logicalDatatype>LOGDT025</logicalDatatype>
+<domain>F7F5960D-C029-FFE2-5CD0-9485BB6EEFF9</domain>
+<defaultValue>&apos;N&apos;</defaultValue>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="xupdate" id="12DB5123-27E0-5E28-EC45-C226579B1425">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-01-30 11:53:09 UTC</createdTime>
+<ownerDesignName>rbac</ownerDesignName>
+<engineerTo>
+<item key="AB1836A8-867F-3E41-6FD1-7602303C7A35" value="true"/>
+</engineerTo>
+<nullsAllowed>true</nullsAllowed>
+<use>0</use>
+<logicalDatatype>LOGDT025</logicalDatatype>
+<domain>F7F5960D-C029-FFE2-5CD0-9485BB6EEFF9</domain>
+<defaultValue>&apos;N&apos;</defaultValue>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="xinsert" id="E2BDD6BD-2E45-5A0D-608C-A06C2BB78E99">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-01-30 11:53:10 UTC</createdTime>
+<ownerDesignName>rbac</ownerDesignName>
+<engineerTo>
+<item key="AB1836A8-867F-3E41-6FD1-7602303C7A35" value="true"/>
+</engineerTo>
+<nullsAllowed>true</nullsAllowed>
+<use>0</use>
+<logicalDatatype>LOGDT025</logicalDatatype>
+<domain>F7F5960D-C029-FFE2-5CD0-9485BB6EEFF9</domain>
+<defaultValue>&apos;N&apos;</defaultValue>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="xdelete" id="89C5429A-56CE-B395-A67D-D6B4C52AABB0">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-01-30 11:53:10 UTC</createdTime>
+<ownerDesignName>rbac</ownerDesignName>
+<engineerTo>
+<item key="AB1836A8-867F-3E41-6FD1-7602303C7A35" value="true"/>
+</engineerTo>
+<nullsAllowed>true</nullsAllowed>
+<use>0</use>
+<logicalDatatype>LOGDT025</logicalDatatype>
+<domain>F7F5960D-C029-FFE2-5CD0-9485BB6EEFF9</domain>
+<defaultValue>&apos;N&apos;</defaultValue>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="xexecute" id="0396120C-8F6C-A512-6074-1092E167730F">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-01-30 11:53:11 UTC</createdTime>
+<ownerDesignName>rbac</ownerDesignName>
+<engineerTo>
+<item key="AB1836A8-867F-3E41-6FD1-7602303C7A35" value="true"/>
+</engineerTo>
+<nullsAllowed>true</nullsAllowed>
+<use>0</use>
+<logicalDatatype>LOGDT025</logicalDatatype>
+<domain>F7F5960D-C029-FFE2-5CD0-9485BB6EEFF9</domain>
+<defaultValue>&apos;N&apos;</defaultValue>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="xcreate" id="05AECA83-E08A-1640-758A-0A082F30AC67">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-01-30 11:53:11 UTC</createdTime>
+<ownerDesignName>rbac</ownerDesignName>
+<engineerTo>
+<item key="AB1836A8-867F-3E41-6FD1-7602303C7A35" value="true"/>
+</engineerTo>
+<nullsAllowed>true</nullsAllowed>
+<use>0</use>
+<logicalDatatype>LOGDT025</logicalDatatype>
+<domain>F7F5960D-C029-FFE2-5CD0-9485BB6EEFF9</domain>
+<defaultValue>&apos;N&apos;</defaultValue>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="xdrop" id="B7F31FF0-8C15-8E9D-9E13-EA4F8D3ED122">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-01-30 11:53:11 UTC</createdTime>
+<ownerDesignName>rbac</ownerDesignName>
+<engineerTo>
+<item key="AB1836A8-867F-3E41-6FD1-7602303C7A35" value="true"/>
+</engineerTo>
+<nullsAllowed>true</nullsAllowed>
+<use>0</use>
+<logicalDatatype>LOGDT025</logicalDatatype>
+<domain>F7F5960D-C029-FFE2-5CD0-9485BB6EEFF9</domain>
+<defaultValue>&apos;N&apos;</defaultValue>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="parent_st_id" id="9DC54284-AB64-1462-2D5C-2689E1FE193D">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-02-19 06:36:27 UTC</createdTime>
+<commentInRDBMS><![CDATA[An object can have a set of underlying objects. E.g a "schema" is a containter for several object types.]]></commentInRDBMS>
+<generatorID>EA6FA341-AC33-EF52-D38A-918A2727B5EA</generatorID>
+<ownerDesignName>rbac</ownerDesignName>
+<engineerTo>
+<item key="AB1836A8-867F-3E41-6FD1-7602303C7A35" value="true"/>
+</engineerTo>
+<nullsAllowed>true</nullsAllowed>
+<referedAttribute>0662FF6C-2AF4-6FC1-8586-AF33925FE7AE</referedAttribute>
+<use>0</use>
+<logicalDatatype>LOGDT011</logicalDatatype>
+<domain>452D46C6-A43E-6B20-E125-A941668F1209</domain>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+</attributes>
+<identifiers itemClass="oracle.dbtools.crest.model.design.logical.CandidateKey">
+<identifier id="D7454827-125B-8A3C-8881-AABADF0FEEC1" name="legal_permission_unq">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-02-02 11:31:30 UTC</createdTime>
+<ownerDesignName>rbac</ownerDesignName>
+<shouldEngineer>false</shouldEngineer>
+<engineerTo>
+<item key="AB1836A8-867F-3E41-6FD1-7602303C7A35" value="false"/>
+</engineerTo>
+<newElementsIDs>71DB342F-C364-9B3B-3F93-471B3EEC9788</newElementsIDs>
+<usedAttributes>
+<attributeRef>71DB342F-C364-9B3B-3F93-471B3EEC9788</attributeRef>
+</usedAttributes>
+</identifier>
+</identifiers>
+</Entity>

@@ -1,0 +1,144 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<Table class="oracle.dbtools.crest.model.design.relational.Table" directorySegmentName="seg_0" id="E5413C0F-022B-72C6-8B14-177405408E87" name="actor_role">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-02-19 06:42:55 UTC</createdTime>
+<ownerDesignName>rbac</ownerDesignName>
+<allowColumnReorder>false</allowColumnReorder>
+<existDependencyGenerateInDDl>true</existDependencyGenerateInDDl>
+<parsed>true</parsed>
+<columns itemClass="oracle.dbtools.crest.model.design.relational.Column">
+<Column name="rbac_actor_st_id" id="184C978D-CFF8-B069-75A0-A0F83C316980">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-02-19 06:42:55 UTC</createdTime>
+<ownerDesignName>rbac</ownerDesignName>
+<use>0</use>
+<logicalDatatype>LOGDT011</logicalDatatype>
+<domain>452D46C6-A43E-6B20-E125-A941668F1209</domain>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<previousColumn>false</previousColumn>
+<autoIncrementCycle>false</autoIncrementCycle>
+<associations>
+<colAssociation fkAssociation="7A234C00-A533-1D0C-A07D-4575BC04BF9E" referredColumn="13D35E41-43C8-66C5-CB20-3BB09BB7BCE0"/>
+</associations>
+</Column>
+<Column name="rbac_role_st_id" id="7F20508D-2CC3-E34D-CDE7-76ACB09CDBEF">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-02-19 06:42:55 UTC</createdTime>
+<ownerDesignName>rbac</ownerDesignName>
+<use>0</use>
+<logicalDatatype>LOGDT011</logicalDatatype>
+<domain>452D46C6-A43E-6B20-E125-A941668F1209</domain>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<previousColumn>false</previousColumn>
+<autoIncrementCycle>false</autoIncrementCycle>
+<associations>
+<colAssociation fkAssociation="73BCF580-AAC7-8226-F2EC-5BB1D053321C" referredColumn="105B76BF-C840-22AB-F817-BC03F9786ACF"/>
+</associations>
+</Column>
+<Column name="st_id" id="412C8620-7DBC-23E0-20B3-8CCD98C74C5D">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-02-19 06:42:55 UTC</createdTime>
+<generatorID>0D902667-1CE4-878A-EDD3-7D9EA82C82BA</generatorID>
+<ownerDesignName>rbac</ownerDesignName>
+<use>0</use>
+<logicalDatatype>LOGDT011</logicalDatatype>
+<domain>452D46C6-A43E-6B20-E125-A941668F1209</domain>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+<isRelationshipColumn>true</isRelationshipColumn>
+<isDependOnFK_AsMandatory>true</isDependOnFK_AsMandatory>
+</Column>
+<Column name="st_created_by" id="11FBB179-887B-B068-FF7B-37BF3507BF87">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-02-19 06:42:55 UTC</createdTime>
+<generatorID>F3A24F15-B3B3-4A55-ADF8-861DF3DE917B</generatorID>
+<ownerDesignName>rbac</ownerDesignName>
+<use>0</use>
+<logicalDatatype>LOGDT024</logicalDatatype>
+<domain>5C97C043-6587-76CF-7784-192E1FE3A912</domain>
+<defaultValue>convert(datetime, &apos;1970-01-01&apos;, 102)</defaultValue>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+<isRelationshipColumn>true</isRelationshipColumn>
+<isDependOnFK_AsMandatory>true</isDependOnFK_AsMandatory>
+</Column>
+<Column name="st_created_date" id="BA81AEEF-026E-9B52-CD21-521C534D1434">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-02-19 06:42:55 UTC</createdTime>
+<generatorID>E5B9AA22-B179-2369-8D75-90F3D162A755</generatorID>
+<ownerDesignName>rbac</ownerDesignName>
+<use>0</use>
+<logicalDatatype>LOGDT046</logicalDatatype>
+<domain>4599240A-5A8F-21AE-066B-98D25E2724F1</domain>
+<defaultValue>convert(datetime, &apos;1970-01-01&apos;, 102)</defaultValue>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+<isRelationshipColumn>true</isRelationshipColumn>
+<isDependOnFK_AsMandatory>true</isDependOnFK_AsMandatory>
+</Column>
+<Column name="st_updated_by" id="4D8A76BE-0F59-92A4-1666-222D84B5E385">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-02-19 06:42:55 UTC</createdTime>
+<generatorID>85E24CCF-330D-C813-CD48-93043608F9CD</generatorID>
+<ownerDesignName>rbac</ownerDesignName>
+<nullsAllowed>true</nullsAllowed>
+<use>0</use>
+<logicalDatatype>LOGDT024</logicalDatatype>
+<domain>2B87FFAB-6119-29F6-D07B-F76180EA2A42</domain>
+<defaultValue>convert(datetime, &apos;1970-01-01&apos;, 102)</defaultValue>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+<isRelationshipColumn>true</isRelationshipColumn>
+</Column>
+<Column name="st_updated_date" id="9B7E9C22-3CA6-BABD-0641-4C413911912A">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-02-19 06:42:55 UTC</createdTime>
+<generatorID>86FA6206-4823-4F40-E12C-A265115FF203</generatorID>
+<ownerDesignName>rbac</ownerDesignName>
+<nullsAllowed>true</nullsAllowed>
+<use>0</use>
+<logicalDatatype>LOGDT046</logicalDatatype>
+<domain>0645CFD6-CB59-F067-9C19-3692245EA9A2</domain>
+<defaultValue>convert(datetime, &apos;1970-01-01&apos;, 102)</defaultValue>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+<autoIncrementCycle>false</autoIncrementCycle>
+<isRelationshipColumn>true</isRelationshipColumn>
+</Column>
+</columns>
+<indexes itemClass="oracle.dbtools.crest.model.design.relational.Index">
+<ind_PK_UK id="3D1CCB77-580D-4E3A-C3B0-73D5BF54D95A" name="actor_role_PK">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-02-19 06:42:55 UTC</createdTime>
+<ownerDesignName>rbac</ownerDesignName>
+<pk>true</pk>
+<indexState>Primary Constraint</indexState>
+<isSurrogateKey>false</isSurrogateKey>
+<indexColumnUsage>
+<colUsage columnID="184C978D-CFF8-B069-75A0-A0F83C316980"/>
+<colUsage columnID="7F20508D-2CC3-E34D-CDE7-76ACB09CDBEF"/>
+</indexColumnUsage>
+</ind_PK_UK>
+<ind_PK_UK id="4953257E-B3EA-ED23-A5F2-4746E67D4138" name="actor_role_rbac_actor_FK">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-02-19 06:42:55 UTC</createdTime>
+<generatorID>D8B23D8C-AF0E-9DE2-0D90-54401B9D69F2</generatorID>
+<ownerDesignName>rbac</ownerDesignName>
+<indexState>Foreign Key</indexState>
+<isSurrogateKey>false</isSurrogateKey>
+<indexColumnUsage>
+<colUsage columnID="184C978D-CFF8-B069-75A0-A0F83C316980"/>
+</indexColumnUsage>
+</ind_PK_UK>
+<ind_PK_UK id="4B1962E7-946E-369B-9EF6-357AFA835ABF" name="actor_role_rbac_role_FK">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-02-19 06:42:55 UTC</createdTime>
+<generatorID>D8B23D8C-AF0E-9DE2-0D90-54401B9D69F2</generatorID>
+<ownerDesignName>rbac</ownerDesignName>
+<indexState>Foreign Key</indexState>
+<isSurrogateKey>false</isSurrogateKey>
+<indexColumnUsage>
+<colUsage columnID="7F20508D-2CC3-E34D-CDE7-76ACB09CDBEF"/>
+</indexColumnUsage>
+</ind_PK_UK>
+</indexes>
+</Table>

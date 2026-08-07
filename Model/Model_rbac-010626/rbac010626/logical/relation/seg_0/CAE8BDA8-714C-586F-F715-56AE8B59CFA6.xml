@@ -1,0 +1,19 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<Relation class="oracle.dbtools.crest.model.design.logical.Relation" name="database_xobject" directorySegmentName="seg_0" id="CAE8BDA8-714C-586F-F715-56AE8B59CFA6">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-01-30 11:40:24 UTC</createdTime>
+<ownerDesignName>rbac</ownerDesignName>
+<engineerTo>
+<item key="AB1836A8-867F-3E41-6FD1-7602303C7A35" value="true"/>
+</engineerTo>
+<sourcePk>85AE633C-AA83-CBCC-A9B7-9759E1ED5AC2</sourcePk>
+<identifying>false</identifying>
+<optionalSource>true</optionalSource>
+<optionalTarget>false</optionalTarget>
+<sourceCardinality>1</sourceCardinality>
+<sourceEntity>DD37ABB9-31D4-AF6E-4E2F-2AC5032789D5</sourceEntity>
+<targetCardinalityString>*</targetCardinalityString>
+<targetEntity>C1ED817C-FF8A-D642-4E72-C66445A050FA</targetEntity>
+<transferable>true</transferable>
+<deleteRule>NO ACTION</deleteRule>
+</Relation>

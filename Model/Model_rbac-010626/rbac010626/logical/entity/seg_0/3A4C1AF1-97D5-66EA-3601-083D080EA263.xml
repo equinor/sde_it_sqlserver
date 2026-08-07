@@ -1,0 +1,106 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<Entity class="oracle.dbtools.crest.model.design.logical.Entity" directorySegmentName="seg_0" id="3A4C1AF1-97D5-66EA-3601-083D080EA263" name="rbac_role">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-01-30 11:55:36 UTC</createdTime>
+<ownerDesignName>rbac</ownerDesignName>
+<engineerTo>
+<item key="AB1836A8-867F-3E41-6FD1-7602303C7A35" value="true"/>
+</engineerTo>
+<adequatelyNormalized>NO</adequatelyNormalized>
+<expectedVolumes>0</expectedVolumes>
+<fwdEngineeringStrategyName>Single Table</fwdEngineeringStrategyName>
+<growthPercent>0</growthPercent>
+<growthType>Year</growthType>
+<hierarchicalParent>A6A94129-364F-C80D-E372-F18AA5CD008A</hierarchicalParent>
+<maxVolumes>9999999</maxVolumes>
+<minVolumes>0</minVolumes>
+<normalForm>Third</normalForm>
+<attributes itemClass="oracle.dbtools.crest.model.design.logical.Attribute">
+<Attribute name="name" id="5ECBBA0A-2F87-84F0-3AFD-FF8A4FAC1545">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-01-30 12:06:18 UTC</createdTime>
+<ownerDesignName>rbac</ownerDesignName>
+<engineerTo>
+<item key="AB1836A8-867F-3E41-6FD1-7602303C7A35" value="true"/>
+</engineerTo>
+<use>0</use>
+<logicalDatatype>LOGDT024</logicalDatatype>
+<domain>9DE59B8D-973E-CEB6-C00E-99D8D705817B</domain>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="is_system_role" id="46C56183-6418-D3C7-F00F-A21C0E2D4E9F">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-02-06 07:25:26 UTC</createdTime>
+<ownerDesignName>rbac</ownerDesignName>
+<engineerTo>
+<item key="AB1836A8-867F-3E41-6FD1-7602303C7A35" value="true"/>
+</engineerTo>
+<nullsAllowed>true</nullsAllowed>
+<use>0</use>
+<logicalDatatype>LOGDT025</logicalDatatype>
+<domain>F7F5960D-C029-FFE2-5CD0-9485BB6EEFF9</domain>
+<defaultValue>&apos;N&apos;</defaultValue>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="change_date" id="A035A8C5-02B7-84DA-6033-518ABFCFBF51">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-01-30 12:17:33 UTC</createdTime>
+<ownerDesignName>rbac</ownerDesignName>
+<engineerTo>
+<item key="AB1836A8-867F-3E41-6FD1-7602303C7A35" value="true"/>
+</engineerTo>
+<nullsAllowed>true</nullsAllowed>
+<useDomainConstraints>false</useDomainConstraints>
+<use>0</use>
+<logicalDatatype>LOGDT015</logicalDatatype>
+<domain>AC54AE0B-0A45-B236-43D9-9511DD4AD6BC</domain>
+<defaultValue>convert(datetime, &apos;1970-01-01&apos;, 102)</defaultValue>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="deploy_date" id="2905B8C4-BAC5-C5CD-FC70-AA5F6B1438A1">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-01-30 12:17:33 UTC</createdTime>
+<ownerDesignName>rbac</ownerDesignName>
+<engineerTo>
+<item key="AB1836A8-867F-3E41-6FD1-7602303C7A35" value="true"/>
+</engineerTo>
+<nullsAllowed>true</nullsAllowed>
+<useDomainConstraints>false</useDomainConstraints>
+<use>0</use>
+<logicalDatatype>LOGDT015</logicalDatatype>
+<domain>AC54AE0B-0A45-B236-43D9-9511DD4AD6BC</domain>
+<defaultValue>convert(datetime, &apos;1970-01-01&apos;, 102)</defaultValue>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="parent_st_id" id="7360A13E-B647-F7E0-1CDD-3F74456099BA">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-02-03 07:51:40 UTC</createdTime>
+<generatorID>CAEB10C2-6D85-7897-5828-0FD5C2A35342</generatorID>
+<ownerDesignName>rbac</ownerDesignName>
+<engineerTo>
+<item key="AB1836A8-867F-3E41-6FD1-7602303C7A35" value="true"/>
+</engineerTo>
+<nullsAllowed>true</nullsAllowed>
+<referedAttribute>0662FF6C-2AF4-6FC1-8586-AF33925FE7AE</referedAttribute>
+<use>0</use>
+<logicalDatatype>LOGDT011</logicalDatatype>
+<domain>452D46C6-A43E-6B20-E125-A941668F1209</domain>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+</attributes>
+<identifiers itemClass="oracle.dbtools.crest.model.design.logical.CandidateKey">
+<identifier id="860898EB-D721-C091-821D-55BC0CD5F8D1" name="xrole_name_un">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-02-03 09:07:13 UTC</createdTime>
+<ownerDesignName>rbac</ownerDesignName>
+<shouldEngineer>false</shouldEngineer>
+<engineerTo>
+<item key="AB1836A8-867F-3E41-6FD1-7602303C7A35" value="false"/>
+</engineerTo>
+<newElementsIDs>5ECBBA0A-2F87-84F0-3AFD-FF8A4FAC1545</newElementsIDs>
+<usedAttributes>
+<attributeRef>5ECBBA0A-2F87-84F0-3AFD-FF8A4FAC1545</attributeRef>
+</usedAttributes>
+</identifier>
+</identifiers>
+</Entity>

@@ -1,0 +1,112 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<Entity class="oracle.dbtools.crest.model.design.logical.Entity" directorySegmentName="seg_0" id="130080A9-8B12-AA22-0BFA-68041D742BB4" name="abstract_transit">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-01-30 11:30:50 UTC</createdTime>
+<ownerDesignName>rbac</ownerDesignName>
+<shouldEngineer>false</shouldEngineer>
+<engineerTo>
+<item key="AB1836A8-867F-3E41-6FD1-7602303C7A35" value="false"/>
+</engineerTo>
+<adequatelyNormalized>NO</adequatelyNormalized>
+<expectedVolumes>0</expectedVolumes>
+<fwdEngineeringStrategyName>Single Table</fwdEngineeringStrategyName>
+<growthPercent>0</growthPercent>
+<growthType>Year</growthType>
+<hierarchicalParent>8626F735-2B62-6E7A-B1C0-400E15673EAF</hierarchicalParent>
+<maxVolumes>9999999</maxVolumes>
+<minVolumes>0</minVolumes>
+<normalForm>Third</normalForm>
+<attributes itemClass="oracle.dbtools.crest.model.design.logical.Attribute">
+<Attribute name="st_id" id="AEDEFF61-C795-97AA-8A92-71C0F14103FD">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-01-30 11:30:50 UTC</createdTime>
+<commentInRDBMS><![CDATA[This is the integer value identifying a particular instance. It can be considered as guid, but should not really be used. Please use the guid]]></commentInRDBMS>
+<ownerDesignName>rbac</ownerDesignName>
+<importedID>62719DD2-E3A0-FCEF-5A04-3D363E52C13F</importedID>
+<engineerTo>
+<item key="AB1836A8-867F-3E41-6FD1-7602303C7A35" value="true"/>
+</engineerTo>
+<useDomainConstraints>false</useDomainConstraints>
+<use>0</use>
+<logicalDatatype>LOGDT011</logicalDatatype>
+<domain>452D46C6-A43E-6B20-E125-A941668F1209</domain>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="st_dataset" id="8C823B09-F018-7120-DABD-BC307CC7B22F">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-01-30 11:30:50 UTC</createdTime>
+<ownerDesignName>rbac</ownerDesignName>
+<importedID>19EEFC44-574D-A0B9-DDB6-0714B9631D3C</importedID>
+<engineerTo>
+<item key="AB1836A8-867F-3E41-6FD1-7602303C7A35" value="true"/>
+</engineerTo>
+<nullsAllowed>true</nullsAllowed>
+<useDomainConstraints>false</useDomainConstraints>
+<use>0</use>
+<logicalDatatype>LOGDT025</logicalDatatype>
+<domain>F7F5960D-C029-FFE2-5CD0-9485BB6EEFF9</domain>
+<defaultValue>&apos;N&apos;</defaultValue>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="st_processed" id="ABAEFD9F-F99F-2A07-761C-376854649B35">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-01-30 11:30:50 UTC</createdTime>
+<ownerDesignName>rbac</ownerDesignName>
+<importedID>94AE2ACF-9531-76FA-6E24-523B9CE327CF</importedID>
+<engineerTo>
+<item key="AB1836A8-867F-3E41-6FD1-7602303C7A35" value="true"/>
+</engineerTo>
+<useDomainConstraints>false</useDomainConstraints>
+<use>0</use>
+<dataTypeSize>1 BYTE</dataTypeSize>
+<defaultValue>&apos;N&apos;</defaultValue>
+<ownDataTypeParameters>1 BYTE,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="uuid" id="E7099565-B4DD-6446-C6AA-DE570835AD35">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-01-30 11:30:50 UTC</createdTime>
+<ownerDesignName>rbac</ownerDesignName>
+<importedID>CD3E5BCD-5669-DE25-4F2F-3845394652FC</importedID>
+<engineerTo>
+<item key="AB1836A8-867F-3E41-6FD1-7602303C7A35" value="true"/>
+</engineerTo>
+<nullsAllowed>true</nullsAllowed>
+<useDomainConstraints>false</useDomainConstraints>
+<use>0</use>
+<logicalDatatype>LOGDT024</logicalDatatype>
+<dataTypeSize>50 BYTE</dataTypeSize>
+<domain>3AA1AD56-8EED-2BEE-97F1-B478432DA4B3</domain>
+<ownDataTypeParameters>50 BYTE,,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="st_source" id="C0A87BD4-CF12-3C6B-3C6A-F88194218143">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-01-30 11:30:50 UTC</createdTime>
+<ownerDesignName>rbac</ownerDesignName>
+<importedID>69254939-DB2A-E643-9AE6-8790EE6DC0AB</importedID>
+<engineerTo>
+<item key="AB1836A8-867F-3E41-6FD1-7602303C7A35" value="true"/>
+</engineerTo>
+<nullsAllowed>true</nullsAllowed>
+<useDomainConstraints>false</useDomainConstraints>
+<use>0</use>
+<logicalDatatype>LOGDT024</logicalDatatype>
+<dataTypeSize>100 BYTE</dataTypeSize>
+<domain>9F53995E-C334-CD2F-775A-0C54F77C6A53</domain>
+<ownDataTypeParameters>100 BYTE,,</ownDataTypeParameters>
+</Attribute>
+</attributes>
+<identifiers itemClass="oracle.dbtools.crest.model.design.logical.CandidateKey">
+<identifier id="16D00854-AE81-D643-885D-C9DA71C304D3" name="abstract_transit PK">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-01-30 11:30:50 UTC</createdTime>
+<ownerDesignName>rbac</ownerDesignName>
+<engineerTo>
+<item key="AB1836A8-867F-3E41-6FD1-7602303C7A35" value="true"/>
+</engineerTo>
+<pk>true</pk>
+<usedAttributes>
+<attributeRef>AEDEFF61-C795-97AA-8A92-71C0F14103FD</attributeRef>
+</usedAttributes>
+</identifier>
+</identifiers>
+</Entity>

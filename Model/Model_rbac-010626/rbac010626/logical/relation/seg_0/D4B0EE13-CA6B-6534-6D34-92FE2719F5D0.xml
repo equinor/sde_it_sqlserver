@@ -1,0 +1,34 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<Relation class="oracle.dbtools.crest.model.design.logical.Relation" name="object_granted_permission" directorySegmentName="seg_0" id="D4B0EE13-CA6B-6534-6D34-92FE2719F5D0">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-01-30 12:01:00 UTC</createdTime>
+<ownerDesignName>rbac</ownerDesignName>
+<engineerTo>
+<item key="AB1836A8-867F-3E41-6FD1-7602303C7A35" value="true"/>
+</engineerTo>
+<sourcePk>85AE633C-AA83-CBCC-A9B7-9759E1ED5AC2</sourcePk>
+<identifying>false</identifying>
+<optionalSource>true</optionalSource>
+<optionalTarget>false</optionalTarget>
+<sourceCardinality>1</sourceCardinality>
+<sourceEntity>C1ED817C-FF8A-D642-4E72-C66445A050FA</sourceEntity>
+<targetCardinalityString>*</targetCardinalityString>
+<targetEntity>7A131863-6B95-D45D-5224-B9D9CA9E61F2</targetEntity>
+<transferable>true</transferable>
+<deleteRule>NO ACTION</deleteRule>
+<attributes itemClass="oracle.dbtools.crest.model.design.logical.Attribute">
+<attribute name="data_type" id="D6362487-2C7B-2734-3F4B-F843ADFDF4C7">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-01-30 12:02:00 UTC</createdTime>
+<ownerDesignName>rbac</ownerDesignName>
+<engineerTo>
+<item key="AB1836A8-867F-3E41-6FD1-7602303C7A35" value="true"/>
+</engineerTo>
+<nullsAllowed>true</nullsAllowed>
+<use>0</use>
+<logicalDatatype>LOGDT024</logicalDatatype>
+<domain>01C904E7-7BE9-BCD9-2A29-4B7B09900D87</domain>
+<ownDataTypeParameters>,,</ownDataTypeParameters>
+</attribute>
+</attributes>
+</Relation>

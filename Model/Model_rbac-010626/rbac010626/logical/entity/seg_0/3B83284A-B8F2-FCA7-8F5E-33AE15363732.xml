@@ -1,0 +1,70 @@
+<?xml version = '1.0' encoding = 'UTF-8'?>
+<Entity class="oracle.dbtools.crest.model.design.logical.Entity" directorySegmentName="seg_0" id="3B83284A-B8F2-FCA7-8F5E-33AE15363732" name="abstract_timing">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-01-30 11:30:50 UTC</createdTime>
+<ownerDesignName>rbac</ownerDesignName>
+<shouldEngineer>false</shouldEngineer>
+<engineerTo>
+<item key="AB1836A8-867F-3E41-6FD1-7602303C7A35" value="false"/>
+</engineerTo>
+<adequatelyNormalized>NO</adequatelyNormalized>
+<expectedVolumes>0</expectedVolumes>
+<fwdEngineeringStrategyName>Single Table</fwdEngineeringStrategyName>
+<growthPercent>0</growthPercent>
+<growthType>Year</growthType>
+<hierarchicalParent>A372F1FD-B9C6-822A-AC2A-195E78D8376E</hierarchicalParent>
+<maxVolumes>9999999</maxVolumes>
+<minVolumes>0</minVolumes>
+<normalForm>Third</normalForm>
+<attributes itemClass="oracle.dbtools.crest.model.design.logical.Attribute">
+<Attribute name="start_time" id="E32BC266-1B33-FE43-631B-19E30B3E837C">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-01-30 11:30:50 UTC</createdTime>
+<ownerDesignName>rbac</ownerDesignName>
+<importedID>4E44ED03-0BAC-7776-430B-86321BDC6C08</importedID>
+<engineerTo>
+<item key="AB1836A8-867F-3E41-6FD1-7602303C7A35" value="true"/>
+</engineerTo>
+<nullsAllowed>true</nullsAllowed>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT015</logicalDatatype>
+<dataTypePrecision>6</dataTypePrecision>
+<ownDataTypeParameters>,6,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="end_time" id="F32C52D2-004E-96FB-6898-F63B98625D52">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-01-30 11:30:50 UTC</createdTime>
+<ownerDesignName>rbac</ownerDesignName>
+<importedID>CBEACBF1-E79F-EE62-95F6-C3B9F4A874D1</importedID>
+<engineerTo>
+<item key="AB1836A8-867F-3E41-6FD1-7602303C7A35" value="true"/>
+</engineerTo>
+<nullsAllowed>true</nullsAllowed>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT015</logicalDatatype>
+<dataTypePrecision>6</dataTypePrecision>
+<ownDataTypeParameters>,6,</ownDataTypeParameters>
+</Attribute>
+<Attribute name="seconds_expended" id="B49C6D73-2D64-5A78-AB3E-E1E96A3B271D">
+<createdBy>JOTHOR</createdBy>
+<createdTime>2026-01-30 11:30:50 UTC</createdTime>
+<commentInRDBMS><![CDATA[Calculated column: ROUND((ENDTIME-STARTTIME)*60*60*24,2)]]></commentInRDBMS>
+<ownerDesignName>rbac</ownerDesignName>
+<importedID>A4B60911-1273-F638-61C0-36445685FF62</importedID>
+<engineerTo>
+<item key="AB1836A8-867F-3E41-6FD1-7602303C7A35" value="true"/>
+</engineerTo>
+<formulaDesc>ROUND((ENDTIME-STARTTIME)*60*60*24,2)</formulaDesc>
+<nullsAllowed>true</nullsAllowed>
+<sourceType>Derived</sourceType>
+<useDomainConstraints>false</useDomainConstraints>
+<use>1</use>
+<logicalDatatype>LOGDT019</logicalDatatype>
+<dataTypePrecision>6</dataTypePrecision>
+<dataTypeScale>2</dataTypeScale>
+<ownDataTypeParameters>,6,2</ownDataTypeParameters>
+</Attribute>
+</attributes>
+</Entity>
